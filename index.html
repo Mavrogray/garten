@@ -19,42 +19,57 @@
   --text:#1F2A21; --text2:#3A4A3E; --muted:#56645A;
   --sun:#FFEDB8; --sun-ink:#3D2E00; --sky:#D7ECFB; --sky-ink:#0D3354; --sky-strong:#1F5E91;
   --peach:#FFE1C7; --peach-ink:#6E3005; --orange:#9A4A0C;
+  --red-soft:#FBE3DF; --red-ink:#8A1F12;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg)}
 body{font-family:'Nunito',ui-rounded,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:18px;color:var(--text);-webkit-tap-highlight-color:transparent}
 button{font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none}
-input,textarea{font-family:inherit}
+input,textarea,select{font-family:inherit}
 .app{max-width:560px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
 
-header{position:relative;background:var(--accent);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 22px 34px;flex-shrink:0}
-.brand{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-.test-tag{margin-left:auto;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-size:12px;letter-spacing:.04em}
-h1{margin:2px 0 0;font-size:32px;font-weight:900;line-height:1.1}
+header{position:relative;background:var(--accent);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 34px 22px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;min-height:44px}
+.test-tag{background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-size:12px;letter-spacing:.04em}
+.gear{margin-left:auto;width:46px;height:46px;border-radius:999px;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center}
+.gear.on{background:#fff;color:var(--accent)}
+.gear.hidden{visibility:hidden}
+h1{margin:0;font-size:32px;font-weight:900;line-height:1.1}
+.title-btn{all:unset;cursor:pointer;font:inherit;color:inherit;min-height:44px;display:inline-flex;align-items:center}
+.title-btn:focus-visible{outline:3px solid #fff;outline-offset:4px;border-radius:8px}
 .wave{position:absolute;left:0;bottom:-1px;width:100%;height:22px;display:block}
 
 main{flex:1 1 auto;overflow-y:auto;padding:8px 18px 24px;display:flex;flex-direction:column;gap:18px;-webkit-overflow-scrolling:touch}
 section{display:flex;flex-direction:column;gap:16px}
 
 .card{background:var(--card);border-radius:24px;padding:18px;box-shadow:0 2px 0 var(--shadow);display:flex;flex-direction:column;gap:8px}
+.card.green{background:var(--accent-soft);box-shadow:none}
+.card.sunbg{background:var(--sun);box-shadow:none;color:var(--sun-ink)}
 .chip{align-self:flex-start;background:var(--accent-soft);color:var(--accent-dark);font-size:14px;font-weight:800;padding:5px 12px;border-radius:999px}
+.chip.white{background:#fff}
+.chip.sun{background:#fff;color:var(--sun-ink)}
+.chip.red{background:var(--red-soft);color:var(--red-ink)}
 .big{font-size:24px;font-weight:900;line-height:1.2}
 .h2{font-size:22px;font-weight:900}
+.h3{font-size:18px;font-weight:900}
 .sub{font-size:18px;color:var(--text2)}
 .small{font-size:15px;color:var(--muted)}
 .body{font-size:17px;color:var(--text2);line-height:1.45}
 .center{text-align:center}
+.sec-title{font-size:20px;font-weight:900;margin-top:4px}
 
 .btn{min-height:48px;padding:0 20px;border-radius:999px;font-size:17px;font-weight:800;border:2px solid var(--accent);background:#fff;color:var(--accent)}
 .btn.primary{border:none;background:var(--accent);color:#fff;box-shadow:0 3px 0 var(--accent-dark);min-height:56px;font-size:19px;font-weight:900}
 .btn.primary:disabled{background:#A3ADA5;box-shadow:none}
 .btn.ghost{border:2px solid #D5D9CC;color:var(--text2)}
 .btn.soft{border:none;background:var(--accent-soft);color:var(--accent-dark);min-height:46px;font-size:16px}
-.btn.danger{border:none;background:#FBE3DF;color:#8A1F12;min-height:46px;font-size:16px}
+.btn.white{border:none;background:#fff;color:var(--accent-dark);min-height:46px;font-size:16px}
+.btn.danger{border:none;background:var(--red-soft);color:var(--red-ink);min-height:46px;font-size:16px}
 .link{min-height:44px;border:none;background:transparent;color:var(--accent);font-size:17px;font-weight:800;padding:0 4px}
+.back{align-self:flex-start;min-height:44px;border:none;background:transparent;color:var(--accent);font-size:17px;font-weight:800;padding:0}
 .self-start{align-self:flex-start}
-.row{display:flex;gap:10px}
-.row>.btn{flex:1}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.btn{flex:1 1 140px}
 .between{display:flex;justify-content:space-between;align-items:center;gap:8px}
 
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -72,11 +87,10 @@ section{display:flex;flex-direction:column;gap:16px}
 .badge{flex-shrink:0;font-size:14px;font-weight:900;padding:6px 14px;border-radius:999px}
 .badge.suche{background:var(--sky);color:var(--sky-ink)}
 .badge.biete{background:var(--peach);color:var(--peach-ink)}
-.badge.own{background:var(--accent-soft);color:var(--accent-dark)}
 
 .seg{display:flex;gap:6px;background:var(--line);padding:5px;border-radius:999px}
 .seg button{flex:1;min-height:46px;border-radius:999px;border:none;font-size:17px;font-weight:800;padding:0 10px;background:transparent;color:var(--text2)}
-.seg button.on{color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.seg button.on{color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15);background:var(--accent)}
 .seg button.on.alle{background:var(--text)}
 .seg button.on.suche{background:var(--sky-strong)}
 .seg button.on.biete{background:var(--orange)}
@@ -84,7 +98,9 @@ section{display:flex;flex-direction:column;gap:16px}
 label.lbl{font-size:16px;font-weight:800;color:var(--text2)}
 .field{width:100%;min-height:52px;border:2px solid #D5D9CC;border-radius:16px;padding:0 14px;font-size:18px;color:var(--text);background:#fff}
 textarea.field{padding:12px 14px;resize:none;min-height:96px}
+select.field{padding-right:8px}
 .field:focus{outline:none;border-color:var(--accent)}
+.field.sm{min-height:46px;font-size:17px;padding:0 10px}
 
 .entry .title{font-size:21px;font-weight:900;line-height:1.2;word-break:break-word}
 .entry .garden{font-size:16px;font-weight:700;color:var(--muted)}
@@ -97,6 +113,13 @@ textarea.field{padding:12px 14px;resize:none;min-height:96px}
 .date.c0{background:var(--accent-soft);color:var(--accent-dark)}
 .date.c1{background:var(--sky);color:var(--sky-ink)}
 .date.c2{background:var(--peach);color:var(--peach-ink)}
+.date.white{background:#fff;color:var(--accent-dark)}
+.tcol{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+
+.plan{display:flex;flex-direction:column}
+.plan-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:2px solid var(--line);font-size:16px}
+.plan-row.mine{font-weight:900;color:var(--accent-dark)}
+.plan-row.past{color:#8C968E}
 
 .demo{display:flex;flex-direction:column;gap:2px;background:#FFF6DB;border:2px dashed #C99A1E;border-radius:18px;padding:6px 16px;color:#5A4307}
 .demo .ttl{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;padding-top:6px}
@@ -119,6 +142,29 @@ textarea.field{padding:12px 14px;resize:none;min-height:96px}
 .sensor{flex-direction:row;justify-content:space-between;align-items:center;gap:12px}
 .temp{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--sky-strong);text-align:right}
 
+.set-btn{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;padding:0 18px;border-radius:18px;border:none;background:var(--bg);color:var(--text);font-size:17px;font-weight:800;text-align:left}
+.set-btn .cnt{background:var(--accent);color:#fff;border-radius:999px;padding:2px 10px;font-size:14px}
+
+.grp{display:grid;grid-template-columns:1fr 84px 20px 84px;gap:8px;align-items:center}
+.grp span{font-size:16px;font-weight:700;color:var(--text2)}
+.ga-edit{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:var(--bg)}
+.ga-edit.past{opacity:.7}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mini-lbl{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.chips button{flex-shrink:0;min-height:44px;padding:0 14px;border-radius:999px;border:2px solid #D5D9CC;background:#fff;font-size:15px;font-weight:800;color:var(--text2)}
+.chips button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.att-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.att-sum div{border-radius:16px;padding:10px;text-align:center;font-size:14px;font-weight:800}
+.att-sum b{display:block;font-size:26px;font-weight:900}
+.att-row{display:flex;align-items:center;gap:12px;min-height:52px;border-bottom:2px solid var(--line);font-size:18px;font-weight:800}
+.att-row input{width:28px;height:28px;accent-color:var(--accent);flex-shrink:0}
+.att-row .tag{margin-left:auto;font-size:13px;font-weight:900;padding:4px 10px;border-radius:999px}
+.tag.exc{background:var(--sky);color:var(--sky-ink)}
+.tag.add{background:var(--peach);color:var(--peach-ink)}
+
 nav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;background:#fff;border-top:2px solid var(--line);padding:8px 6px calc(10px + env(safe-area-inset-bottom))}
 nav button{min-height:58px;border:none;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px;font-weight:800;background:transparent;color:var(--muted)}
 nav button.on{background:var(--accent-soft);color:var(--accent-dark)}
@@ -134,9 +180,12 @@ nav.hidden{display:none}
     <div class="brand">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 16-9 0 12-4 16-9 16z"/><path d="M4 21c3-5 6-8 10-10"/></svg>
       <span>KGV Jägerteich</span>
-      <span class="test-tag">Testversion</span>
+      <span class="test-tag">Test</span>
+      <button class="gear" id="gear" data-act="tab" data-tab="settings" aria-label="Einstellungen">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
-    <h1 id="title">Moin!</h1>
+    <h1><button id="title" class="title-btn" data-act="tab" data-tab="start" aria-label="Zur Startseite">Moin!</button></h1>
     <svg class="wave" viewBox="0 0 390 22" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22 C 60 2, 120 2, 195 12 S 330 24, 390 6 L 390 22 Z" fill="#F6F4EC"/></svg>
   </header>
 
@@ -157,16 +206,19 @@ nav.hidden{display:none}
   'use strict';
 
   // Bei jedem Update hochzählen, zusammen mit VERSION in sw.js
-  var APP_VERSION = '0.1.0';
+  var APP_VERSION = '0.2.0';
   var COPYRIGHT = '© ' + new Date().getFullYear() + ' KGV Jägerteich';
-  function footer() {
-    return '<div class="small center">Testversion ' + APP_VERSION + ' · ' + COPYRIGHT + '</div>';
-  }
+  var ADMIN_PIN = '1234'; // nur Testversion
 
   var KEY = 'jaegerteich-test-v1';
   var DAY = 86400000;
   var EXPIRE_DAYS = 28;
   var COOLDOWN_MS = 15 * 60000;
+  var FEE = 120;
+
+  var WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  var WD_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  var MON = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
   var ICON = {
     bulb: function (c, s) { return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="' + c + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>'; },
@@ -176,9 +228,9 @@ nav.hidden{display:none}
   };
 
   var TERMINE = [
-    { wd: 'Sa', d: '07', m: 'Nov', title: 'Herbst-Arbeitseinsatz', time: '10:00 Uhr · Vereinsheim', text: 'Laub, Hecken, Wege. Werkzeug bitte mitbringen.' },
-    { wd: 'Sa', d: '14', m: 'Nov', title: 'Wasser wird abgestellt', time: 'ab 9:00 Uhr', text: 'Bis dahin Wasseruhr ablesen und Leitungen entleeren.' },
-    { wd: 'Sa', d: '28', m: 'Nov', title: 'Adventsbasteln', time: '15:00 Uhr · Vereinsheim', text: 'Für Groß und Klein, mit Kaffee und Kuchen.' }
+    { date: '2026-11-07', title: 'Herbst-Arbeitseinsatz', time: '10:00 Uhr · Vereinsheim', text: 'Laub, Hecken, Wege. Werkzeug bitte mitbringen.' },
+    { date: '2026-11-14', title: 'Wasser wird abgestellt', time: 'ab 9:00 Uhr', text: 'Bis dahin Wasseruhr ablesen und Leitungen entleeren.' },
+    { date: '2026-11-28', title: 'Adventsbasteln', time: '15:00 Uhr · Vereinsheim', text: 'Für Groß und Klein, mit Kaffee und Kuchen.' }
   ];
 
   var SENSORS = [
@@ -187,6 +239,24 @@ nav.hidden{display:none}
     { name: 'Dreieck', temp: '6,1 °C', hum: '86 % rF', min: '2,5 °C', age: 'vor 4 min' },
     { name: 'Vereinsheim innen', temp: '14,2 °C', hum: '62 % rF', min: '11,9 °C', age: 'vor 1 min' }
   ];
+
+  function defaultGroups() {
+    return [
+      { id: 'g1', from: 2, to: 16 }, { id: 'g2', from: 17, to: 30 }, { id: 'g3', from: 31, to: 45 },
+      { id: 'g4', from: 46, to: 60 }, { id: 'g5', from: 61, to: 75 }, { id: 'g6', from: 76, to: 90 },
+      { id: 'g7', from: 91, to: 105 }
+    ];
+  }
+  // Beispielplan 2027 nach dem Muster der Vereinswebsite
+  function defaultGa() {
+    var plan = [
+      ['2027-03-27', 'g4'], ['2027-04-10', 'g3'], ['2027-04-24', 'g2'], ['2027-05-08', 'g1'],
+      ['2027-05-22', 'g7'], ['2027-06-05', 'g6'], ['2027-06-19', 'g5'],
+      ['2027-07-03', 'g4'], ['2027-07-17', 'g3'], ['2027-08-14', 'g2'], ['2027-08-28', 'g1'],
+      ['2027-09-11', 'g7'], ['2027-09-25', 'g6'], ['2027-10-16', 'g5']
+    ];
+    return plan.map(function (p, i) { return { id: 'ga' + (i + 1), date: p[0], group: p[1], add: [], skip: [] }; });
+  }
 
   function defaults() {
     var now = Date.now();
@@ -197,6 +267,11 @@ nav.hidden{display:none}
       dark: true,
       lightUntil: 0,
       cooldownUntil: 0,
+      remindDays: 3,
+      groups: defaultGroups(),
+      ga: defaultGa(),
+      excuses: [],
+      att: {},
       log: [
         { garden: '48', ts: now - DAY - 3 * 3600000, min: 10 },
         { garden: '7', ts: now - 2 * DAY - 2 * 3600000, min: 5 }
@@ -225,10 +300,14 @@ nav.hidden{display:none}
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 
-  var S = load();
-  var ui = { tab: 'start', filter: 'alle', form: false, newType: 'biete', newTitle: '', newText: '' };
+  function freshUi() {
+    return { tab: 'start', filter: 'alle', form: false, newType: 'biete', newTitle: '', newText: '',
+             admin: false, sview: '', attFor: '', excuseFor: '', excuseText: '' };
+  }
 
-  // abgelaufene Einträge entfernen
+  var S = load();
+  var ui = freshUi();
+
   S.entries = S.entries.filter(function (e) { return Date.now() - e.ts < EXPIRE_DAYS * DAY; });
   save();
 
@@ -240,10 +319,15 @@ nav.hidden{display:none}
   }
   function pad(n) { return String(n).padStart(2, '0'); }
   function fmt(ms) { var s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + pad(s % 60); }
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseIso(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function dShort(s) { var d = parseIso(s); return WD[d.getDay()] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); }
+  function dLong(s) { var d = parseIso(s); return WD_LONG[d.getDay()] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); }
+  function daysUntil(s) { return Math.round((parseIso(s) - parseIso(todayIso())) / DAY); }
   function rel(ts) {
     var d0 = new Date(); d0.setHours(0, 0, 0, 0);
-    var diff = Math.floor((d0.getTime() - ts) / DAY) + 1;
     if (ts >= d0.getTime()) return 'heute';
+    var diff = Math.floor((d0.getTime() - ts) / DAY) + 1;
     if (diff <= 1) return 'gestern';
     if (diff < 7) return 'vor ' + diff + ' Tagen';
     if (diff < 14) return 'vor 1 Woche';
@@ -252,8 +336,11 @@ nav.hidden{display:none}
   function clock(ts) {
     var d = new Date(ts);
     var day = rel(ts);
-    if (day.indexOf('vor') === 0) day = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
+    if (day.indexOf('vor') === 0) day = WD[d.getDay()];
     return day + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function numList(str) {
+    return String(str || '').split(/[^0-9]+/).filter(Boolean).map(Number).filter(function (n) { return n > 0 && n < 1000; });
   }
   var toastTimer;
   function toast(msg) {
@@ -270,19 +357,88 @@ nav.hidden{display:none}
     if (!S.dark) return 'bright';
     return 'ready';
   }
+  function footer() { return '<div class="small center">Testversion ' + APP_VERSION + ' · ' + COPYRIGHT + '</div>'; }
+
+  // ---------- Gemeinschaftsarbeit ----------
+  function groupById(id) { for (var i = 0; i < S.groups.length; i++) if (S.groups[i].id === id) return S.groups[i]; return null; }
+  function groupLabel(id) { var g = groupById(id); return g ? 'Garten ' + g.from + '–' + g.to : 'ohne Gruppe'; }
+  function gaById(id) { for (var i = 0; i < S.ga.length; i++) if (S.ga[i].id === id) return S.ga[i]; return null; }
+  function gaSorted() { return S.ga.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); }
+  function gardensOf(t) {
+    var g = groupById(t.group), list = [];
+    if (g) for (var i = g.from; i <= g.to; i++) list.push(i);
+    (t.add || []).forEach(function (n) { if (list.indexOf(n) < 0) list.push(n); });
+    list = list.filter(function (n) { return (t.skip || []).indexOf(n) < 0; });
+    return list.sort(function (a, b) { return a - b; });
+  }
+  function isAdded(t, n) { var g = groupById(t.group); return (t.add || []).indexOf(n) >= 0 && !(g && n >= g.from && n <= g.to); }
+  function myGa() { var n = Number(S.garden); return gaSorted().filter(function (t) { return gardensOf(t).indexOf(n) >= 0; }); }
+  function myNextGa() { var t0 = todayIso(); return myGa().filter(function (t) { return t.date >= t0; })[0] || null; }
+  function excuseOf(tid, garden) {
+    for (var i = 0; i < S.excuses.length; i++) if (S.excuses[i].terminId === tid && S.excuses[i].garden === String(garden)) return S.excuses[i];
+    return null;
+  }
+
+  function downloadIcs(t) {
+    var d = t.date.replace(/-/g, '');
+    var stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    var lines = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//KGV Jaegerteich//Vereins-App//DE', 'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT',
+      'UID:ga-' + t.id + '-' + S.garden + '@jaegerteich',
+      'DTSTAMP:' + stamp,
+      'DTSTART;TZID=Europe/Berlin:' + d + 'T074500',
+      'DTEND;TZID=Europe/Berlin:' + d + 'T120000',
+      'SUMMARY:Gemeinschaftsarbeit KGV Jägerteich',
+      'LOCATION:Vereinsheim KGV Jägerteich',
+      'DESCRIPTION:Treffpunkt 7:45 Uhr am Vereinsheim\\, Arbeit 8–12 Uhr. Gartengeräte mitbringen.',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:Gemeinschaftsarbeit KGV Jägerteich', 'TRIGGER:-P' + S.remindDays + 'D', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'
+    ];
+    var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'gemeinschaftsarbeit-' + t.date + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    toast('Kalenderdatei gespeichert, antippen zum Übernehmen.');
+  }
 
   // ---------- Bausteine ----------
-  function badge(e) {
-    return '<span class="badge ' + e.type + '">' + (e.type === 'suche' ? 'Suche' : 'Biete') + '</span>';
-  }
+  function badge(e) { return '<span class="badge ' + e.type + '">' + (e.type === 'suche' ? 'Suche' : 'Biete') + '</span>'; }
   function gardenLabel(g) { return g === S.garden ? 'Dein Garten (' + esc(g) + ')' : 'Garten ' + esc(g); }
+  function dateBox(iso, cls) {
+    var d = parseIso(iso);
+    return '<div class="date ' + cls + '"><span class="wd">' + WD[d.getDay()] + '</span><span class="d">' + pad(d.getDate()) + '</span><span class="m">' + MON[d.getMonth()] + '</span></div>';
+  }
+
+  function gaMemberCard(t, withPlanLink) {
+    var ex = excuseOf(t.id, S.garden);
+    var days = daysUntil(t.date);
+    var soon = days >= 0 && days <= S.remindDays;
+    var when = days === 0 ? 'Heute!' : days === 1 ? 'Morgen!' : 'In ' + days + ' Tagen';
+    var head = '<div class="between"><span class="chip ' + (soon ? 'sun' : 'white') + '">' + (soon ? when : 'Deine Gemeinschaftsarbeit') + '</span>' +
+      (ex ? '<span class="chip red">Entschuldigt</span>' : '') + '</div>';
+    var body = '<div class="big">' + dLong(t.date) + '</div>' +
+      '<div class="body" style="color:inherit">Treffpunkt <b>7:45 Uhr</b> am Vereinsheim, Arbeit 8–12 Uhr. Gartengeräte bitte mitbringen.</div>';
+    var actions;
+    if (ex) {
+      actions = '<div class="body" style="color:inherit">Deine Entschuldigung ist eingegangen. Die Arbeit muss nachgeholt werden, Nachholtermin mit dem 2. Vorsitzenden absprechen.</div>' +
+        '<div class="row"><button class="btn white" data-act="excuse-withdraw" data-id="' + t.id + '">Entschuldigung zurückziehen</button></div>';
+    } else {
+      actions = '<div class="row"><button class="btn white" data-act="ics" data-id="' + t.id + '">In Kalender</button>' +
+        '<button class="btn white" data-act="excuse-open" data-id="' + t.id + '">Entschuldigen</button></div>';
+    }
+    var link = withPlanLink ? '<button class="link self-start" data-act="tab" data-tab="termine">Alle Termine ansehen</button>' : '';
+    return '<div class="card ' + (soon ? 'sunbg' : 'green') + '">' + head + body + actions + link + '</div>';
+  }
 
   // ---------- Ansichten ----------
   function viewWelcome() {
     return '<section>' +
       '<div class="card">' +
         '<div class="big">Willkommen!</div>' +
-        '<div class="body">Das ist die Testversion der Vereins-App. Gib deine Gartennummer ein, damit deine Einträge in der Tauschbörse richtig zugeordnet werden.</div>' +
+        '<div class="body">Das ist die Testversion der Vereins-App. Gib deine Gartennummer ein, damit Termine und Einträge zu dir passen.</div>' +
         '<label class="lbl" for="w-garden">Gartennummer</label>' +
         '<input class="field" id="w-garden" type="number" inputmode="numeric" min="1" max="200" placeholder="z. B. 48">' +
         '<div class="small">In der echten App meldest du dich einmalig mit dem Code deines Gartens an, derselbe wie fürs WLAN.</div>' +
@@ -302,33 +458,42 @@ nav.hidden{display:none}
     return 'aus · tippen';
   }
 
+  function excuseForm() {
+    var t = gaById(ui.excuseFor);
+    if (!t) return '';
+    return '<div class="card">' +
+      '<div class="h2">Entschuldigung</div>' +
+      '<div class="body">Gemeinschaftsarbeit am <b>' + dLong(t.date) + '</b>, Garten ' + esc(S.garden) + '.</div>' +
+      '<label class="lbl" for="x-text">Grund</label>' +
+      '<textarea class="field" id="x-text" data-field="excuseText" rows="3" maxlength="300" placeholder="z. B. Urlaub, Krankheit, Arbeit …">' + esc(ui.excuseText) + '</textarea>' +
+      '<div class="small">Muss spätestens am Tag der Gemeinschaftsarbeit vorliegen. Entschuldigte Arbeit wird nachgeholt, den Termin sprichst du mit dem 2. Vorsitzenden ab.</div>' +
+      '<div class="row"><button class="btn ghost" data-act="excuse-cancel">Abbrechen</button>' +
+      '<button class="btn primary" id="x-submit" data-act="excuse-send"' + (ui.excuseText.trim() ? '' : ' disabled') + '>Absenden</button></div>' +
+    '</div>';
+  }
+
   function viewStart() {
-    var t = TERMINE[0];
+    var t = TERMINE.filter(function (x) { return x.date >= todayIso(); })[0];
     var latest = S.entries.slice(0, 2).map(function (e) {
       return '<div class="mini">' + badge(e) +
         '<div class="col"><span class="tt">' + esc(e.title) + '</span>' +
         '<span class="small">' + gardenLabel(e.garden) + ' · ' + rel(e.ts) + '</span></div></div>';
-    }).join('');
-    if (!latest) latest = '<div class="small">Noch keine Einträge.</div>';
-    return '<section>' +
-      '<div class="card">' +
-        '<span class="chip">Nächster Termin</span>' +
+    }).join('') || '<div class="small">Noch keine Einträge.</div>';
+    var ga = myNextGa();
+    var gaHtml = ui.excuseFor ? excuseForm() : (ga ? gaMemberCard(ga, true)
+      : '<div class="card green"><span class="chip white">Deine Gemeinschaftsarbeit</span><div class="body">Für Garten ' + esc(S.garden) + ' ist gerade kein Termin geplant.</div></div>');
+    var vt = t ? '<div class="card">' +
+        '<span class="chip">Nächster Vereinstermin</span>' +
         '<div class="big">' + esc(t.title) + '</div>' +
-        '<div class="sub">' + t.wd + ', ' + t.d + '.11. · ' + esc(t.time) + '</div>' +
-        '<button class="btn self-start" data-act="tab" data-tab="termine">Alle Termine</button>' +
-      '</div>' +
+        '<div class="sub">' + dShort(t.date).slice(0, -5) + ' · ' + esc(t.time) + '</div>' +
+      '</div>' : '';
+    return '<section>' + gaHtml + vt +
       '<div class="tiles">' +
         '<button class="tile sun" data-act="tab" data-tab="licht"><span class="ico">' + ICON.bulb('#9A6A00', 26) + '</span><span class="t1">Wegelicht</span><span class="t2" id="tile-light">' + lightTileText() + '</span></button>' +
         '<button class="tile sky" data-act="tab" data-tab="wetter"><span class="ico">' + ICON.therm + '</span><span class="t1">6,4 °C</span><span class="t2">Vereinsheim außen</span></button>' +
       '</div>' +
       '<div class="between"><div class="h2">Neu im Tausch</div><button class="link" data-act="tab" data-tab="boerse">Alle ansehen</button></div>' +
-      latest +
-      '<div class="card">' +
-        '<span class="chip">Testversion</span>' +
-        '<div class="body">Angemeldet als <b>Garten ' + esc(S.garden) + '</b>. Einträge, Licht und Protokoll werden nur auf diesem Gerät gespeichert, andere sehen sie nicht.</div>' +
-        '<div class="row"><button class="btn ghost" data-act="change-garden">Garten ändern</button><button class="btn ghost" data-act="reset">Zurücksetzen</button></div>' +
-      '</div>' +
-      footer() +
+      latest + footer() +
     '</section>';
   }
 
@@ -338,7 +503,6 @@ nav.hidden{display:none}
       '<button class="alle' + (f === 'alle' ? ' on' : '') + '" data-act="filter" data-f="alle">Alle</button>' +
       '<button class="suche' + (f === 'suche' ? ' on' : '') + '" data-act="filter" data-f="suche">Suche</button>' +
       '<button class="biete' + (f === 'biete' ? ' on' : '') + '" data-act="filter" data-f="biete">Biete</button></div>';
-
     var form;
     if (ui.form) {
       var nt = ui.newType;
@@ -358,7 +522,6 @@ nav.hidden{display:none}
     } else {
       form = '<button class="btn primary" data-act="open-form">+ Neuer Eintrag</button>';
     }
-
     var list = S.entries.filter(function (e) { return f === 'alle' || e.type === f; }).map(function (e) {
       var own = e.garden === S.garden;
       return '<article class="card entry">' +
@@ -369,21 +532,48 @@ nav.hidden{display:none}
         (own ? '<button class="btn danger" data-act="delete" data-id="' + e.id + '">Löschen</button>'
              : '<button class="btn soft" data-act="message">Nachricht</button>') +
         '</div></article>';
-    }).join('');
-    if (!list) list = '<div class="small center">Keine Einträge in dieser Auswahl.</div>';
-
+    }).join('') || '<div class="small center">Keine Einträge in dieser Auswahl.</div>';
     return '<section>' + seg + form + list + '</section>';
   }
 
   function viewTermine() {
-    return '<section>' + TERMINE.map(function (t, i) {
-      return '<div class="card termin">' +
-        '<div class="date c' + (i % 3) + '"><span class="wd">' + t.wd + '</span><span class="d">' + t.d + '</span><span class="m">' + t.m + '</span></div>' +
-        '<div style="display:flex;flex-direction:column;gap:4px;min-width:0">' +
-          '<span class="h2" style="font-size:20px;line-height:1.2">' + esc(t.title) + '</span>' +
-          '<span class="small" style="font-weight:700">' + esc(t.time) + '</span>' +
-          '<span class="body">' + esc(t.text) + '</span></div></div>';
-    }).join('') + '<div class="small center">Termine pflegt der Vorstand. In der Testversion sind es Beispiele.</div></section>';
+    var t0 = todayIso();
+    var mine = myGa().filter(function (t) { return t.date >= t0; });
+    var mineHtml;
+    if (ui.excuseFor) mineHtml = excuseForm();
+    else if (!mine.length) mineHtml = '<div class="card green"><div class="body">Für Garten ' + esc(S.garden) + ' ist gerade kein Termin geplant.</div></div>';
+    else mineHtml = gaMemberCard(mine[0], false) + mine.slice(1).map(function (t) {
+      var ex = excuseOf(t.id, S.garden);
+      return '<div class="card termin">' + dateBox(t.date, 'c0') +
+        '<div class="tcol"><span class="h3">Gemeinschaftsarbeit</span><span class="small" style="font-weight:700">7:45 Uhr Treffpunkt · 8–12 Uhr</span>' +
+        (ex ? '<span class="chip red">Entschuldigt</span>' :
+          '<div class="row"><button class="btn soft" data-act="ics" data-id="' + t.id + '">In Kalender</button><button class="btn soft" data-act="excuse-open" data-id="' + t.id + '">Entschuldigen</button></div>') +
+        '</div></div>';
+    }).join('');
+
+    var vt = TERMINE.filter(function (x) { return x.date >= t0; }).map(function (t, i) {
+      return '<div class="card termin">' + dateBox(t.date, 'c' + ((i + 1) % 3)) +
+        '<div class="tcol"><span class="h3" style="font-size:20px;line-height:1.2">' + esc(t.title) + '</span>' +
+        '<span class="small" style="font-weight:700">' + esc(t.time) + '</span>' +
+        '<span class="body">' + esc(t.text) + '</span></div></div>';
+    }).join('') || '<div class="small">Keine anstehenden Vereinstermine.</div>';
+
+    var n = Number(S.garden);
+    var plan = gaSorted().map(function (t) {
+      var cls = gardensOf(t).indexOf(n) >= 0 ? ' mine' : '';
+      if (t.date < t0) cls += ' past';
+      return '<div class="plan-row' + cls + '"><span>' + dShort(t.date) + '</span><span>' + groupLabel(t.group) +
+        ((t.add && t.add.length) ? ' +' + t.add.length : '') + '</span></div>';
+    }).join('');
+
+    return '<section>' +
+      '<div class="sec-title">Deine Gemeinschaftsarbeit</div>' + mineHtml +
+      '<div class="sec-title">Vereinstermine</div>' + vt +
+      '<div class="sec-title">Plan Gemeinschaftsarbeit</div>' +
+      '<div class="card"><div class="body">Jeder Garten ist <b>zwei Mal im Jahr</b> dran, samstags 8–12 Uhr. Nicht geleistete Arbeit kostet ' + FEE + ' € pro Einsatz.</div>' +
+        '<div class="plan">' + plan + '</div></div>' +
+      '<div class="small center">Beispielplan nach dem Muster der Vereinswebsite. Termine pflegt der Vorstand.</div>' +
+    '</section>';
   }
 
   function viewLicht() {
@@ -391,7 +581,7 @@ nav.hidden{display:none}
     var demo = '<div class="demo"><div class="ttl">Simulation (nur Test)</div>' +
       '<label><span>Handy ist im Vereins-WLAN</span><input type="checkbox" data-act="lan"' + (S.inLan ? ' checked' : '') + '></label>' +
       '<label><span>Draußen ist es dunkel</span><input type="checkbox" data-act="dark"' + (S.dark ? ' checked' : '') + '></label></div>';
-    var main = '';
+    var main;
     if (st === 'on') {
       main = '<div class="on-card"><span class="bulb">' + ICON.bulb('#5A4300', 52) + '</span>' +
         '<div class="h2" style="margin-top:8px">Licht ist an</div>' +
@@ -420,7 +610,7 @@ nav.hidden{display:none}
       return '<div class="logrow"><b>' + (l.garden === S.garden ? 'Du' : 'Garten ' + esc(l.garden)) + '</b><span>' + clock(l.ts) + ' · ' + l.min + ' min</span></div>';
     }).join('');
     return '<section>' + demo + main +
-      '<div style="display:flex;flex-direction:column;gap:6px"><div class="h2" style="font-size:18px">Zuletzt geschaltet</div>' + (log || '<div class="small">Noch nichts.</div>') + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px"><div class="h3">Zuletzt geschaltet</div>' + (log || '<div class="small">Noch nichts.</div>') + '</div>' +
     '</section>';
   }
 
@@ -429,7 +619,7 @@ nav.hidden{display:none}
       '<div class="notice"><b>Frostgefahr:</b> Am Teich waren es letzte Nacht 2,1 °C. Außenleitungen prüfen.</div>' +
       SENSORS.map(function (s) {
         return '<div class="card sensor"><div style="display:flex;flex-direction:column;gap:4px">' +
-          '<span class="h2" style="font-size:19px">' + s.name + '</span>' +
+          '<span class="h3" style="font-size:19px">' + s.name + '</span>' +
           '<span class="small">Tiefst 24 h: ' + s.min + ' · ' + s.age + '</span></div>' +
           '<div><div class="temp">' + s.temp + '</div><div class="small" style="text-align:right">' + s.hum + '</div></div></div>';
       }).join('') +
@@ -437,50 +627,200 @@ nav.hidden{display:none}
     '</section>';
   }
 
-  var TITLES = { start: 'Moin!', boerse: 'Tauschbörse', termine: 'Termine', licht: 'Wegelicht', wetter: 'Temperaturen' };
+  // ---------- Einstellungen & Admin ----------
+  function viewSettings() {
+    if (ui.sview && ui.admin) {
+      if (ui.sview === 'plan') return viewPlan();
+      if (ui.sview === 'att') return viewAtt();
+      if (ui.sview === 'exc') return viewExc();
+    }
+    var rd = S.remindDays;
+    var admin;
+    if (!ui.admin) {
+      admin = '<div class="card"><div class="h2">Adminbereich</div>' +
+        '<div class="body">Für den Vorstand: Gemeinschaftsarbeit planen, Anwesenheit abhaken, Entschuldigungen ansehen.</div>' +
+        '<label class="lbl" for="a-pin">PIN</label>' +
+        '<input class="field" id="a-pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••">' +
+        '<div class="small">Test-PIN: 1234</div>' +
+        '<button class="btn" data-act="admin-login">Entsperren</button></div>';
+    } else {
+      var openEx = S.excuses.length;
+      admin = '<div class="card"><div class="between"><div class="h2">Adminbereich</div><span class="chip">entsperrt</span></div>' +
+        '<button class="set-btn" data-act="sview" data-v="plan"><span>Gemeinschaftsarbeit planen</span><span>›</span></button>' +
+        '<button class="set-btn" data-act="sview" data-v="att"><span>Anwesenheit abhaken</span><span>›</span></button>' +
+        '<button class="set-btn" data-act="sview" data-v="exc"><span>Entschuldigungen</span><span>' + (openEx ? '<span class="cnt">' + openEx + '</span> ' : '') + '›</span></button>' +
+        '<button class="link self-start" data-act="admin-logout">Adminbereich sperren</button></div>';
+    }
+    return '<section>' +
+      '<div class="card"><div class="h2">Mein Garten</div>' +
+        '<div class="body">Angemeldet als <b>Garten ' + esc(S.garden) + '</b>.</div>' +
+        '<button class="btn ghost self-start" data-act="change-garden">Garten ändern</button></div>' +
+      '<div class="card"><div class="h2">Erinnerung</div>' +
+        '<div class="body">Wie viele Tage vor der Gemeinschaftsarbeit soll die App erinnern?</div>' +
+        '<div class="seg" role="group" aria-label="Erinnerung">' +
+          [1, 3, 7].map(function (n) { return '<button class="' + (rd === n ? 'on' : '') + '" data-act="remind" data-d="' + n + '">' + n + (n === 1 ? ' Tag' : ' Tage') + '</button>'; }).join('') +
+        '</div>' +
+        '<div class="small">Die Startseite hebt den Termin dann gelb hervor. Mit „In Kalender“ erinnert zusätzlich dein Handy-Kalender. Push-Mitteilungen kommen mit der Server-Version.</div></div>' +
+      admin +
+      '<div class="card"><div class="h2">Über die App</div>' +
+        '<div class="body">Testversion ' + APP_VERSION + '<br>' + COPYRIGHT + '</div>' +
+        '<div class="small">Alle Daten liegen in dieser Testversion nur auf diesem Gerät.</div>' +
+        '<button class="btn danger self-start" data-act="reset">Testdaten zurücksetzen</button></div>' +
+    '</section>';
+  }
+
+  function backBtn() { return '<button class="back" data-act="sview" data-v="">‹ Einstellungen</button>'; }
+
+  function groupOptions(sel) {
+    return S.groups.map(function (g) { return '<option value="' + g.id + '"' + (g.id === sel ? ' selected' : '') + '>Garten ' + g.from + '–' + g.to + '</option>'; }).join('');
+  }
+
+  function viewPlan() {
+    var t0 = todayIso();
+    var groups = S.groups.map(function (g, i) {
+      return '<div class="grp"><span>Gruppe ' + (i + 1) + '</span>' +
+        '<input class="field sm" type="number" inputmode="numeric" aria-label="Gruppe ' + (i + 1) + ' von" data-grp="' + g.id + '" data-k="from" value="' + g.from + '">' +
+        '<span class="center">–</span>' +
+        '<input class="field sm" type="number" inputmode="numeric" aria-label="Gruppe ' + (i + 1) + ' bis" data-grp="' + g.id + '" data-k="to" value="' + g.to + '"></div>';
+    }).join('');
+    var list = gaSorted().map(function (t) {
+      return '<div class="ga-edit' + (t.date < t0 ? ' past' : '') + '">' +
+        '<div class="two">' +
+          '<div><div class="mini-lbl">Datum</div><input class="field sm" type="date" data-ga="' + t.id + '" data-k="date" value="' + t.date + '" aria-label="Datum"></div>' +
+          '<div><div class="mini-lbl">Gruppe</div><select class="field sm" data-ga="' + t.id + '" data-k="group" aria-label="Gruppe">' + groupOptions(t.group) + '</select></div>' +
+        '</div>' +
+        '<div class="two">' +
+          '<div><div class="mini-lbl">Zusätzlich</div><input class="field sm" type="text" inputmode="numeric" placeholder="z. B. 12, 50" data-ga="' + t.id + '" data-k="add" value="' + (t.add || []).join(', ') + '" aria-label="Zusätzliche Gärten"></div>' +
+          '<div><div class="mini-lbl">Ausgenommen</div><input class="field sm" type="text" inputmode="numeric" placeholder="z. B. 33" data-ga="' + t.id + '" data-k="skip" value="' + (t.skip || []).join(', ') + '" aria-label="Ausgenommene Gärten"></div>' +
+        '</div>' +
+        '<div class="between"><span class="small">' + dShort(t.date) + ' · ' + gardensOf(t).length + ' Gärten</span>' +
+        '<button class="btn danger" style="min-height:44px" data-act="ga-del" data-id="' + t.id + '">Löschen</button></div>' +
+      '</div>';
+    }).join('');
+    return '<section>' + backBtn() +
+      '<div class="card"><div class="h2">Neuer Termin</div>' +
+        '<div class="two">' +
+          '<div><div class="mini-lbl">Datum</div><input class="field sm" id="n-date" type="date" aria-label="Datum neuer Termin"></div>' +
+          '<div><div class="mini-lbl">Gruppe</div><select class="field sm" id="n-group" aria-label="Gruppe neuer Termin">' + groupOptions(S.groups[0] && S.groups[0].id) + '</select></div>' +
+        '</div>' +
+        '<button class="btn primary" data-act="ga-add">Termin anlegen</button></div>' +
+      '<div class="card"><div class="h2">Termine</div>' +
+        '<div class="small">Änderungen werden sofort gespeichert. Verschieben: einfach das Datum ändern. Nachholer unter „Zusätzlich“ eintragen.</div>' +
+        list + '</div>' +
+      '<div class="card"><div class="h2">Gruppen</div><div class="small">Gartennummern von–bis, gelten für alle Termine.</div>' + groups + '</div>' +
+    '</section>';
+  }
+
+  function viewAtt() {
+    var sorted = gaSorted();
+    if (!sorted.length) return '<section>' + backBtn() + '<div class="card"><div class="body">Noch keine Termine geplant.</div></div></section>';
+    if (!ui.attFor || !gaById(ui.attFor)) {
+      var t0 = todayIso(), pick = sorted[0];
+      sorted.forEach(function (t) { if (t.date <= t0) pick = t; });
+      if (pick.date > t0) pick = sorted[0];
+      ui.attFor = pick.id;
+    }
+    var t = gaById(ui.attFor);
+    var chips = '<div class="chips" role="group" aria-label="Termin wählen">' + sorted.map(function (x) {
+      var d = parseIso(x.date);
+      return '<button class="' + (x.id === t.id ? 'on' : '') + '" data-act="att-pick" data-id="' + x.id + '">' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.</button>';
+    }).join('') + '</div>';
+    var present = S.att[t.id] || [];
+    var gardens = gardensOf(t);
+    var nP = 0, nE = 0, nF = 0;
+    var rows = gardens.map(function (n) {
+      var here = present.indexOf(n) >= 0;
+      var ex = excuseOf(t.id, n);
+      if (here) nP++; else if (ex) nE++; else nF++;
+      return '<label class="att-row"><input type="checkbox" data-att="' + n + '"' + (here ? ' checked' : '') + '><span>Garten ' + n + '</span>' +
+        (ex ? '<span class="tag exc">entschuldigt</span>' : isAdded(t, n) ? '<span class="tag add">Nachholer</span>' : '') + '</label>';
+    }).join('');
+    return '<section>' + backBtn() + chips +
+      '<div class="card"><div class="h2">' + dLong(t.date) + '</div><div class="small">' + groupLabel(t.group) + ' · ' + gardens.length + ' Gärten</div>' +
+        '<div class="att-sum">' +
+          '<div style="background:var(--accent-soft);color:var(--accent-dark)"><b>' + nP + '</b>da</div>' +
+          '<div style="background:var(--sky);color:var(--sky-ink)"><b>' + nE + '</b>entschuldigt</div>' +
+          '<div style="background:var(--red-soft);color:var(--red-ink)"><b>' + nF + '</b>offen</div>' +
+        '</div>' +
+        (t.date < todayIso() && nF ? '<div class="small">Bleiben ' + nF + ' Gärten offen, wären das ' + nF + ' × ' + FEE + ' € = ' + (nF * FEE) + ' €.</div>' : '') +
+        '<div class="row"><button class="btn ghost" data-act="att-all">Alle da</button><button class="btn ghost" data-act="att-none">Alle leeren</button></div>' +
+        rows + '</div>' +
+    '</section>';
+  }
+
+  function viewExc() {
+    var list = S.excuses.slice().sort(function (a, b) { return b.ts - a.ts; }).map(function (x) {
+      var t = gaById(x.terminId);
+      return '<div class="card"><div class="between"><span class="h3">Garten ' + esc(x.garden) + '</span><span class="small">' + clock(x.ts) + '</span></div>' +
+        '<div class="small" style="font-weight:700">Termin: ' + (t ? dShort(t.date) : 'gelöscht') + '</div>' +
+        '<div class="body">' + esc(x.text) + '</div></div>';
+    }).join('') || '<div class="card"><div class="body">Keine Entschuldigungen eingegangen.</div></div>';
+    return '<section>' + backBtn() + '<div class="h2">Entschuldigungen</div>' + list + '</section>';
+  }
+
+  var TITLES = { start: 'Moin!', boerse: 'Tauschbörse', termine: 'Termine', licht: 'Wegelicht', wetter: 'Temperaturen', settings: 'Einstellungen' };
+  var SUBTITLES = { plan: 'Planung', att: 'Anwesenheit', exc: 'Entschuldigungen' };
 
   function render() {
     var main = document.getElementById('main');
     var nav = document.getElementById('nav');
+    var gear = document.getElementById('gear');
     if (!S.garden) {
       document.getElementById('title').textContent = 'Willkommen';
       nav.classList.add('hidden');
+      gear.classList.add('hidden');
       main.innerHTML = viewWelcome();
       return;
     }
     nav.classList.remove('hidden');
-    document.getElementById('title').textContent = TITLES[ui.tab];
-    var html = { start: viewStart, boerse: viewBoerse, termine: viewTermine, licht: viewLicht, wetter: viewWetter }[ui.tab]();
-    main.innerHTML = html;
+    gear.classList.remove('hidden');
+    var title = TITLES[ui.tab];
+    if (ui.tab === 'settings' && ui.admin && SUBTITLES[ui.sview]) title = SUBTITLES[ui.sview];
+    document.getElementById('title').textContent = title;
+    var views = { start: viewStart, boerse: viewBoerse, termine: viewTermine, licht: viewLicht, wetter: viewWetter, settings: viewSettings };
+    main.innerHTML = views[ui.tab]();
+    gear.classList.toggle('on', ui.tab === 'settings');
+    var chipOn = main.querySelector('.chips button.on');
+    if (chipOn) { var box = chipOn.parentNode; box.scrollLeft = chipOn.offsetLeft - box.offsetLeft - box.clientWidth / 2 + chipOn.offsetWidth / 2; }
     Array.prototype.forEach.call(nav.querySelectorAll('button'), function (b) {
       var on = b.dataset.tab === ui.tab;
       b.classList.toggle('on', on);
       if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
     });
   }
+  // Neuaufbau verzögert, damit er nicht mitten in ein blur/change-Ereignis fällt
+  var rrTimer = null;
+  function rerenderKeepScroll() {
+    if (rrTimer) return;
+    rrTimer = setTimeout(function () {
+      rrTimer = null;
+      var m = document.getElementById('main'); var y = m.scrollTop; render(); m.scrollTop = y;
+    }, 0);
+  }
 
   // ---------- Aktionen ----------
   document.addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-act]');
     if (!b || b.tagName === 'INPUT') return;
-    var act = b.dataset.act;
+    var act = b.dataset.act, t;
     switch (act) {
       case 'tab':
-        ui.tab = b.dataset.tab; render(); document.getElementById('main').scrollTop = 0; break;
+        ui.tab = b.dataset.tab;
+        if (ui.tab !== 'settings') ui.sview = '';
+        render(); document.getElementById('main').scrollTop = 0; break;
       case 'welcome': {
-        var v = document.getElementById('w-garden').value.trim();
-        var n = parseInt(v, 10);
+        var n = parseInt(document.getElementById('w-garden').value.trim(), 10);
         if (!n || n < 1 || n > 200) { toast('Bitte eine gültige Gartennummer eingeben.'); return; }
         S.garden = String(n); save(); ui.tab = 'start'; render(); break;
       }
-      case 'change-garden':
-        S.garden = ''; save(); render(); break;
+      case 'change-garden': S.garden = ''; ui = freshUi(); save(); render(); break;
       case 'reset':
         if (confirm('Alle Testdaten auf diesem Gerät löschen und neu beginnen?')) {
           try { localStorage.removeItem(KEY); } catch (e) {}
-          S = defaults(); ui = { tab: 'start', filter: 'alle', form: false, newType: 'biete', newTitle: '', newText: '' }; render();
+          S = defaults(); ui = freshUi(); render();
         }
         break;
+      // Tauschbörse
       case 'filter': ui.filter = b.dataset.f; render(); break;
       case 'open-form': ui.form = true; render(); var f = document.getElementById('f-title'); if (f) f.focus(); break;
       case 'cancel': ui.form = false; ui.newTitle = ''; ui.newText = ''; render(); break;
@@ -489,8 +829,7 @@ nav.hidden{display:none}
         var title = ui.newTitle.trim();
         if (!title) return;
         S.entries.unshift({ id: S.nextId++, type: ui.newType, title: title, text: ui.newText.trim(), garden: S.garden, ts: Date.now() });
-        save();
-        ui.form = false; ui.newTitle = ''; ui.newText = ''; ui.filter = 'alle';
+        save(); ui.form = false; ui.newTitle = ''; ui.newText = ''; ui.filter = 'alle';
         render(); toast('Eintrag veröffentlicht.'); break;
       }
       case 'delete':
@@ -500,57 +839,120 @@ nav.hidden{display:none}
           save(); render(); toast('Eintrag gelöscht.');
         }
         break;
-      case 'message':
-        toast('In der echten App kannst du hier den Garten anschreiben.'); break;
+      case 'message': toast('In der echten App kannst du hier den Garten anschreiben.'); break;
+      // Licht
       case 'light': {
         if (lightState() !== 'ready') return;
-        var min = Number(b.dataset.min);
-        var now = Date.now();
+        var min = Number(b.dataset.min), now = Date.now();
         S.lightUntil = now + min * 60000;
         S.cooldownUntil = S.lightUntil + COOLDOWN_MS;
         S.log.unshift({ garden: S.garden, ts: now, min: min });
         S.log = S.log.slice(0, 20);
         save(); render(); toast('Wegelicht ist an.'); break;
       }
-      case 'stop': {
-        var t = Date.now();
-        S.lightUntil = t; S.cooldownUntil = t + COOLDOWN_MS; save(); render(); break;
-      }
+      case 'stop': { var tn = Date.now(); S.lightUntil = tn; S.cooldownUntil = tn + COOLDOWN_MS; save(); render(); break; }
       case 'skip': S.cooldownUntil = 0; save(); render(); break;
+      // Gemeinschaftsarbeit Mitglied
+      case 'ics': t = gaById(b.dataset.id); if (t) downloadIcs(t); break;
+      case 'excuse-open':
+        t = gaById(b.dataset.id);
+        if (!t) return;
+        if (t.date < todayIso()) { toast('Der Termin ist schon vorbei.'); return; }
+        ui.excuseFor = t.id; ui.excuseText = ''; render();
+        var xt = document.getElementById('x-text'); if (xt) xt.focus();
+        break;
+      case 'excuse-cancel': ui.excuseFor = ''; ui.excuseText = ''; render(); break;
+      case 'excuse-send': {
+        var txt = ui.excuseText.trim();
+        if (!txt || !ui.excuseFor) return;
+        S.excuses.push({ id: 'x' + (S.nextId++), terminId: ui.excuseFor, garden: S.garden, text: txt, ts: Date.now() });
+        save(); ui.excuseFor = ''; ui.excuseText = ''; render(); toast('Entschuldigung abgeschickt.'); break;
+      }
+      case 'excuse-withdraw':
+        if (confirm('Entschuldigung zurückziehen?')) {
+          var tid = b.dataset.id;
+          S.excuses = S.excuses.filter(function (x) { return !(x.terminId === tid && x.garden === S.garden); });
+          save(); render();
+        }
+        break;
+      // Einstellungen
+      case 'remind': S.remindDays = Number(b.dataset.d); save(); render(); break;
+      case 'admin-login': {
+        var pin = document.getElementById('a-pin').value;
+        if (pin === ADMIN_PIN) { ui.admin = true; render(); toast('Adminbereich entsperrt.'); }
+        else toast('PIN falsch.');
+        break;
+      }
+      case 'admin-logout': ui.admin = false; ui.sview = ''; render(); break;
+      case 'sview': ui.sview = b.dataset.v; render(); document.getElementById('main').scrollTop = 0; break;
+      // Admin: Planung
+      case 'ga-add': {
+        var d = document.getElementById('n-date').value, g = document.getElementById('n-group').value;
+        if (!d) { toast('Bitte ein Datum wählen.'); return; }
+        S.ga.push({ id: 'ga' + (S.nextId++), date: d, group: g, add: [], skip: [] });
+        save(); rerenderKeepScroll(); toast('Termin angelegt: ' + dShort(d) + '.'); break;
+      }
+      case 'ga-del':
+        t = gaById(b.dataset.id);
+        if (t && confirm('Termin am ' + dShort(t.date) + ' löschen?')) {
+          S.ga = S.ga.filter(function (x) { return x.id !== t.id; });
+          delete S.att[t.id];
+          save(); rerenderKeepScroll();
+        }
+        break;
+      // Admin: Anwesenheit
+      case 'att-pick': ui.attFor = b.dataset.id; rerenderKeepScroll(); break;
+      case 'att-all': t = gaById(ui.attFor); if (t) { S.att[t.id] = gardensOf(t); save(); rerenderKeepScroll(); } break;
+      case 'att-none': t = gaById(ui.attFor); if (t) { S.att[t.id] = []; save(); rerenderKeepScroll(); } break;
     }
   });
 
   document.addEventListener('change', function (ev) {
-    var a = ev.target.dataset && ev.target.dataset.act;
-    if (a === 'lan') { S.inLan = ev.target.checked; save(); render(); }
-    if (a === 'dark') { S.dark = ev.target.checked; save(); render(); }
+    var el = ev.target, ds = el.dataset || {};
+    if (ds.act === 'lan') { S.inLan = el.checked; save(); render(); return; }
+    if (ds.act === 'dark') { S.dark = el.checked; save(); render(); return; }
+    if (ds.att) {
+      var t = gaById(ui.attFor); if (!t) return;
+      var n = Number(ds.att), list = (S.att[t.id] || []).filter(function (x) { return x !== n; });
+      if (el.checked) list.push(n);
+      S.att[t.id] = list; save(); rerenderKeepScroll(); return;
+    }
+    if (ds.ga) {
+      var g = gaById(ds.ga); if (!g) return;
+      if (ds.k === 'date') { if (!el.value) return; g.date = el.value; }
+      else if (ds.k === 'group') g.group = el.value;
+      else g[ds.k] = numList(el.value);
+      save(); rerenderKeepScroll(); toast('Gespeichert.'); return;
+    }
+    if (ds.grp) {
+      var gr = groupById(ds.grp); var v = parseInt(el.value, 10);
+      if (!gr || !v || v < 1) { rerenderKeepScroll(); return; }
+      gr[ds.k] = v;
+      if (gr.from > gr.to) { var tmp = gr.from; gr.from = gr.to; gr.to = tmp; }
+      save(); rerenderKeepScroll(); toast('Gruppe gespeichert.');
+    }
   });
 
   document.addEventListener('input', function (ev) {
     var fld = ev.target.dataset && ev.target.dataset.field;
     if (!fld) return;
     ui[fld] = ev.target.value;
-    var sb = document.getElementById('f-submit');
-    if (sb) sb.disabled = !ui.newTitle.trim();
+    var sb = document.getElementById('f-submit'); if (sb) sb.disabled = !ui.newTitle.trim();
+    var xb = document.getElementById('x-submit'); if (xb) xb.disabled = !ui.excuseText.trim();
   });
 
   document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Enter' && ev.target.id === 'w-garden') {
-      var w = document.querySelector('[data-act="welcome"]'); if (w) w.click();
-    }
+    if (ev.key !== 'Enter') return;
+    if (ev.target.id === 'w-garden') { var w = document.querySelector('[data-act="welcome"]'); if (w) w.click(); }
+    if (ev.target.id === 'a-pin') { var a = document.querySelector('[data-act="admin-login"]'); if (a) a.click(); }
   });
 
-  // Sekundentakt nur für Countdown-Anzeigen, ohne Eingabefelder zu stören
   var lastState = lightState();
   setInterval(function () {
     var st = lightState();
-    if (st !== lastState) { lastState = st; if (ui.tab === 'licht' || ui.tab === 'start') render(); return; }
-    if (st === 'on') {
-      var c = document.getElementById('count'); if (c) c.textContent = fmt(S.lightUntil - Date.now());
-    }
-    if (st === 'cooldown') {
-      var k = document.getElementById('cool'); if (k) k.textContent = fmt(S.cooldownUntil - Date.now());
-    }
+    if (st !== lastState) { lastState = st; if (ui.tab === 'licht' || (ui.tab === 'start' && !ui.excuseFor)) render(); return; }
+    if (st === 'on') { var c = document.getElementById('count'); if (c) c.textContent = fmt(S.lightUntil - Date.now()); }
+    if (st === 'cooldown') { var k = document.getElementById('cool'); if (k) k.textContent = fmt(S.cooldownUntil - Date.now()); }
     var tl = document.getElementById('tile-light'); if (tl) tl.textContent = lightTileText();
   }, 1000);
 

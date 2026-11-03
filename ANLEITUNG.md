@@ -48,6 +48,13 @@ Auf dem iPhone: in Safari öffnen → Teilen → **Zum Home-Bildschirm**.
 | Wegelicht | Countdown, 15 min Pause, Protokoll; „Vereins-WLAN“ und „dunkel“ per Schalter simuliert, **schaltet kein echtes Licht** |
 | Temperaturen | feste Beispielwerte |
 | Anmeldung | nur Gartennummer; später Code pro Garten, derselbe wie der WLAN-Voucher |
+| Gemeinschaftsarbeit | Beispielplan 2027 nach Muster der Website; eigene Termine auf Start und unter Termine |
+| In Kalender | echte Kalenderdatei (.ics) mit Erinnerung, funktioniert |
+| Entschuldigen | funktioniert, landet aber nur im Adminbereich desselben Geräts |
+| Erinnerung | gelbe Hervorhebung auf der Startseite; Push erst mit Server |
+| Adminbereich | Zahnrad oben rechts → PIN **1234** (nur Test): Termine planen/verschieben, Nachholer, Gruppen, Anwesenheit, Entschuldigungen |
+
+Ein Tipp auf die Überschrift oben führt immer zurück zur Startseite.
 
 Einträge verschwinden nach 4 Wochen von selbst. Unten auf der Startseite lassen sich die Testdaten zurücksetzen.
 
