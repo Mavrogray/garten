@@ -54,6 +54,12 @@ Auf dem iPhone: in Safari öffnen → Teilen → **Zum Home-Bildschirm**.
 | Erinnerung | gelbe Hervorhebung auf der Startseite; Push erst mit Server |
 | Adminbereich | Zahnrad oben rechts → PIN **1234** (nur Test): Termine planen/verschieben, Nachholer, Gruppen, Anwesenheit, Entschuldigungen |
 
+| Garten verlegen | Admin → Planung: Garten von Termin A auf Termin B legen, mit „Rückgängig“ |
+| Garten hinzufügen | Admin → Anwesenheit: spontan dabei gewesene Gärten eintragen |
+| Jahresübersicht | Admin: erfüllt (2/2), 1×, 0×, frei/befreit, offener Betrag; Meldung „neu erfüllt“ |
+| Vermerk | pro Garten und Jahr: krank, Garten frei, befreit, Sonstiges + Text; frei/befreit fällt aus Planung und Abrechnung |
+| Kassenwart | Mail mit Liste der offenen Gärten (öffnet das Mailprogramm), Liste zusätzlich als CSV für Excel |
+
 Ein Tipp auf die Überschrift oben führt immer zurück zur Startseite.
 
 Einträge verschwinden nach 4 Wochen von selbst. Unten auf der Startseite lassen sich die Testdaten zurücksetzen.

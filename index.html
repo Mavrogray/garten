@@ -206,7 +206,7 @@ nav.hidden{display:none}
   'use strict';
 
   // Bei jedem Update hochzählen, zusammen mit VERSION in sw.js
-  var APP_VERSION = '0.2.0';
+  var APP_VERSION = '0.3.0';
   var COPYRIGHT = '© ' + new Date().getFullYear() + ' KGV Jägerteich';
   var ADMIN_PIN = '1234'; // nur Testversion
 
@@ -272,6 +272,9 @@ nav.hidden{display:none}
       ga: defaultGa(),
       excuses: [],
       att: {},
+      notes: {},
+      newDone: [],
+      treasurer: '',
       log: [
         { garden: '48', ts: now - DAY - 3 * 3600000, min: 10 },
         { garden: '7', ts: now - 2 * DAY - 2 * 3600000, min: 5 }
@@ -302,7 +305,7 @@ nav.hidden{display:none}
 
   function freshUi() {
     return { tab: 'start', filter: 'alle', form: false, newType: 'biete', newTitle: '', newText: '',
-             admin: false, sview: '', attFor: '', excuseFor: '', excuseText: '' };
+             admin: false, sview: '', attFor: '', excuseFor: '', excuseText: '', year: '', noteFor: '' };
   }
 
   var S = load();
@@ -364,12 +367,74 @@ nav.hidden{display:none}
   function groupLabel(id) { var g = groupById(id); return g ? 'Garten ' + g.from + '–' + g.to : 'ohne Gruppe'; }
   function gaById(id) { for (var i = 0; i < S.ga.length; i++) if (S.ga[i].id === id) return S.ga[i]; return null; }
   function gaSorted() { return S.ga.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); }
+  var NOTE_STATUS = {
+    '': 'Kein Status',
+    krank: 'Krank / verhindert',
+    frei: 'Garten frei',
+    befreit: 'Befreit (Vereinsaufgabe)',
+    sonst: 'Sonstiges'
+  };
+  function yearOf(t) { return t.date.slice(0, 4); }
+  function noteOf(year, n) { var y = S.notes[year]; return (y && y[n]) || null; }
+  function excluded(year, n) { var x = noteOf(year, n); return !!(x && (x.status === 'frei' || x.status === 'befreit')); }
+  // Gärten eines Termins: Gruppe + Zusätzlich − Ausgenommen − Verlegt − frei/befreit
   function gardensOf(t) {
-    var g = groupById(t.group), list = [];
+    var g = groupById(t.group), list = [], mv = t.moved || {}, yr = yearOf(t);
     if (g) for (var i = g.from; i <= g.to; i++) list.push(i);
     (t.add || []).forEach(function (n) { if (list.indexOf(n) < 0) list.push(n); });
-    list = list.filter(function (n) { return (t.skip || []).indexOf(n) < 0; });
+    list = list.filter(function (n) { return (t.skip || []).indexOf(n) < 0 && !mv[n] && !excluded(yr, n); });
     return list.sort(function (a, b) { return a - b; });
+  }
+  function countsFor(year) {
+    var c = {};
+    S.ga.forEach(function (t) {
+      if (yearOf(t) !== year) return;
+      (S.att[t.id] || []).forEach(function (n) { c[n] = (c[n] || 0) + 1; });
+    });
+    return c;
+  }
+  function noteNewlyDone(year, before) {
+    var after = countsFor(year), hit = [];
+    Object.keys(after).forEach(function (k) {
+      if (after[k] >= 2 && (before[k] || 0) < 2) {
+        var n = Number(k);
+        hit.push(n);
+        if (S.newDone.indexOf(n) < 0) S.newDone.push(n);
+      }
+    });
+    if (hit.length === 1) toast('Garten ' + hit[0] + ' hat 2/2 erfüllt.');
+    else if (hit.length > 1) toast(hit.length + ' Gärten haben 2/2 erfüllt.');
+  }
+  function gaYears() {
+    var ys = {};
+    S.ga.forEach(function (t) { ys[yearOf(t)] = 1; });
+    return Object.keys(ys).sort();
+  }
+  function yearData(y) {
+    var ts = S.ga.filter(function (t) { return yearOf(t) === y; });
+    var all = {};
+    S.groups.forEach(function (g) { for (var i = g.from; i <= g.to; i++) all[i] = 1; });
+    ts.forEach(function (t) { (t.add || []).forEach(function (n) { all[n] = 1; }); });
+    Object.keys(S.notes[y] || {}).forEach(function (n) { all[n] = 1; });
+    var counts = countsFor(y);
+    Object.keys(counts).forEach(function (n) { all[n] = 1; });
+    var rows = Object.keys(all).map(Number).sort(function (a, b) { return a - b; }).map(function (n) {
+      return { n: n, c: counts[n] || 0, note: noteOf(y, n), excl: excluded(y, n) };
+    });
+    var t0 = todayIso();
+    var dates = ts.map(function (t) { return t.date; }).sort();
+    var open = rows.filter(function (r) { return !r.excl && r.c < 2; });
+    return {
+      rows: rows,
+      done: rows.filter(function (r) { return !r.excl && r.c >= 2; }),
+      one: open.filter(function (r) { return r.c === 1; }),
+      zero: open.filter(function (r) { return r.c === 0; }),
+      open: open,
+      excl: rows.filter(function (r) { return r.excl; }),
+      sum: open.reduce(function (s, r) { return s + (2 - r.c) * FEE; }, 0),
+      finished: dates.length > 0 && dates[dates.length - 1] < t0,
+      last: dates[dates.length - 1] || ''
+    };
   }
   function isAdded(t, n) { var g = groupById(t.group); return (t.add || []).indexOf(n) >= 0 && !(g && n >= g.from && n <= g.to); }
   function myGa() { var n = Number(S.garden); return gaSorted().filter(function (t) { return gardensOf(t).indexOf(n) >= 0; }); }
@@ -633,6 +698,7 @@ nav.hidden{display:none}
       if (ui.sview === 'plan') return viewPlan();
       if (ui.sview === 'att') return viewAtt();
       if (ui.sview === 'exc') return viewExc();
+      if (ui.sview === 'year') return viewYear();
     }
     var rd = S.remindDays;
     var admin;
@@ -649,6 +715,7 @@ nav.hidden{display:none}
         '<button class="set-btn" data-act="sview" data-v="plan"><span>Gemeinschaftsarbeit planen</span><span>›</span></button>' +
         '<button class="set-btn" data-act="sview" data-v="att"><span>Anwesenheit abhaken</span><span>›</span></button>' +
         '<button class="set-btn" data-act="sview" data-v="exc"><span>Entschuldigungen</span><span>' + (openEx ? '<span class="cnt">' + openEx + '</span> ' : '') + '›</span></button>' +
+        '<button class="set-btn" data-act="sview" data-v="year"><span>Jahresübersicht &amp; Abrechnung</span><span>' + (S.newDone.length ? '<span class="cnt">' + S.newDone.length + ' neu</span> ' : '') + '›</span></button>' +
         '<button class="link self-start" data-act="admin-logout">Adminbereich sperren</button></div>';
     }
     return '<section>' +
@@ -673,6 +740,33 @@ nav.hidden{display:none}
 
   function groupOptions(sel) {
     return S.groups.map(function (g) { return '<option value="' + g.id + '"' + (g.id === sel ? ' selected' : '') + '>Garten ' + g.from + '–' + g.to + '</option>'; }).join('');
+  }
+
+  function termOptions(sel) {
+    return gaSorted().map(function (t) {
+      return '<option value="' + t.id + '"' + (t.id === sel ? ' selected' : '') + '>' + dShort(t.date) + ' · ' + groupLabel(t.group).replace('Garten ', '') + '</option>';
+    }).join('');
+  }
+  function moveCard() {
+    var moves = [];
+    gaSorted().forEach(function (t) {
+      var mv = t.moved || {};
+      Object.keys(mv).forEach(function (n) {
+        var to = gaById(mv[n]);
+        moves.push('<div class="between plan-row"><span><b>Garten ' + n + '</b>: ' + dShort(t.date).slice(4, 10) + ' → ' + (to ? dShort(to.date).slice(4, 10) : '?') + '</span>' +
+          '<button class="link" data-act="move-undo" data-from="' + t.id + '" data-n="' + n + '">Rückgängig</button></div>');
+      });
+    });
+    return '<div class="card"><div class="h2">Garten verlegen</div>' +
+      '<div class="small">Ein Garten macht an einem anderen Termin mit. Er erscheint dann dort und wird beim alten Termin nicht mehr als offen gezählt.</div>' +
+      '<div><div class="mini-lbl">Garten</div><input class="field sm" id="m-garden" type="number" inputmode="numeric" placeholder="z. B. 33" aria-label="Gartennummer"></div>' +
+      '<div class="two">' +
+        '<div><div class="mini-lbl">Von</div><select class="field sm" id="m-from" aria-label="Von Termin">' + termOptions('') + '</select></div>' +
+        '<div><div class="mini-lbl">Nach</div><select class="field sm" id="m-to" aria-label="Nach Termin">' + termOptions('') + '</select></div>' +
+      '</div>' +
+      '<button class="btn" data-act="ga-move">Verlegen</button>' +
+      (moves.length ? '<div class="plan">' + moves.join('') + '</div>' : '') +
+    '</div>';
   }
 
   function viewPlan() {
@@ -704,6 +798,7 @@ nav.hidden{display:none}
           '<div><div class="mini-lbl">Gruppe</div><select class="field sm" id="n-group" aria-label="Gruppe neuer Termin">' + groupOptions(S.groups[0] && S.groups[0].id) + '</select></div>' +
         '</div>' +
         '<button class="btn primary" data-act="ga-add">Termin anlegen</button></div>' +
+      moveCard() +
       '<div class="card"><div class="h2">Termine</div>' +
         '<div class="small">Änderungen werden sofort gespeichert. Verschieben: einfach das Datum ändern. Nachholer unter „Zusätzlich“ eintragen.</div>' +
         list + '</div>' +
@@ -735,6 +830,12 @@ nav.hidden{display:none}
       return '<label class="att-row"><input type="checkbox" data-att="' + n + '"' + (here ? ' checked' : '') + '><span>Garten ' + n + '</span>' +
         (ex ? '<span class="tag exc">entschuldigt</span>' : isAdded(t, n) ? '<span class="tag add">Nachholer</span>' : '') + '</label>';
     }).join('');
+    var mv = t.moved || {};
+    var movedRows = Object.keys(mv).map(function (n) {
+      var to = gaById(mv[n]);
+      return '<div class="att-row" style="color:var(--muted)"><span style="width:28px"></span><span>Garten ' + n + '</span>' +
+        '<span class="tag" style="background:var(--line);color:var(--text2)">verlegt → ' + (to ? dShort(to.date).slice(4, 10) : '?') + '</span></div>';
+    }).join('');
     return '<section>' + backBtn() + chips +
       '<div class="card"><div class="h2">' + dLong(t.date) + '</div><div class="small">' + groupLabel(t.group) + ' · ' + gardens.length + ' Gärten</div>' +
         '<div class="att-sum">' +
@@ -744,8 +845,113 @@ nav.hidden{display:none}
         '</div>' +
         (t.date < todayIso() && nF ? '<div class="small">Bleiben ' + nF + ' Gärten offen, wären das ' + nF + ' × ' + FEE + ' € = ' + (nF * FEE) + ' €.</div>' : '') +
         '<div class="row"><button class="btn ghost" data-act="att-all">Alle da</button><button class="btn ghost" data-act="att-none">Alle leeren</button></div>' +
-        rows + '</div>' +
+        rows + movedRows + '</div>' +
+      '<div class="card"><div class="h3">Garten hinzufügen</div>' +
+        '<div class="small">Für Gärten, die heute zusätzlich mitgemacht haben. Sie werden als anwesend eingetragen.</div>' +
+        '<div class="row"><input class="field sm" id="att-add" type="number" inputmode="numeric" placeholder="Gartennummer" aria-label="Gartennummer hinzufügen" style="flex:1 1 120px">' +
+        '<button class="btn" data-act="att-add" style="flex:0 0 auto">Hinzufügen</button></div></div>' +
     '</section>';
+  }
+
+  function pickYear() {
+    var ys = gaYears();
+    if (ui.year && ys.indexOf(ui.year) >= 0) return ui.year;
+    var t0 = todayIso(), next = gaSorted().filter(function (t) { return t.date >= t0; })[0];
+    ui.year = next ? yearOf(next) : (ys[ys.length - 1] || String(new Date().getFullYear()));
+    return ui.year;
+  }
+
+  function noteLine(r) {
+    if (!r.note) return '';
+    var s = r.note.status ? NOTE_STATUS[r.note.status] : '';
+    var txt = r.note.text ? esc(r.note.text) : '';
+    return '<div class="small">' + [s, txt].filter(Boolean).join(' · ') + '</div>';
+  }
+
+  function noteEditor(y, n) {
+    var x = noteOf(y, n) || { status: '', text: '' };
+    var opts = Object.keys(NOTE_STATUS).map(function (k) { return '<option value="' + k + '"' + (x.status === k ? ' selected' : '') + '>' + NOTE_STATUS[k] + '</option>'; }).join('');
+    return '<div class="ga-edit" style="margin-top:6px">' +
+      '<div><div class="mini-lbl">Status</div><select class="field sm" id="nt-status" aria-label="Status">' + opts + '</select></div>' +
+      '<div><div class="mini-lbl">Vermerk</div><input class="field sm" id="nt-text" type="text" maxlength="120" placeholder="z. B. Attest, nachgeholt am …" value="' + esc(x.text || '') + '" aria-label="Vermerk"></div>' +
+      '<div class="small">„Garten frei“ und „Befreit“ nehmen den Garten in diesem Jahr aus Planung und Abrechnung.</div>' +
+      '<div class="row"><button class="btn ghost" data-act="note-cancel">Abbrechen</button><button class="btn" data-act="note-save" data-n="' + n + '">Speichern</button></div>' +
+    '</div>';
+  }
+
+  function yearRow(y, r, showFee) {
+    var editing = ui.noteFor === String(r.n);
+    var right = showFee ? '<b style="color:var(--red-ink)">' + ((2 - r.c) * FEE) + ' €</b>' : '';
+    return '<div style="border-bottom:2px solid var(--line);padding:8px 0">' +
+      '<div class="between"><span class="h3" style="font-size:17px">Garten ' + r.n + ' <span class="small" style="font-weight:700">· ' + r.c + '/2</span></span>' +
+      '<span style="display:flex;align-items:center;gap:8px">' + right +
+      '<button class="link" style="font-size:15px" data-act="note-open" data-n="' + r.n + '">Vermerk</button></span></div>' +
+      noteLine(r) + (editing ? noteEditor(y, r.n) : '') + '</div>';
+  }
+
+  function viewYear() {
+    var y = pickYear();
+    var ys = gaYears();
+    var d = yearData(y);
+    var chips = ys.length > 1 ? '<div class="chips" role="group" aria-label="Jahr wählen">' + ys.map(function (x) {
+      return '<button class="' + (x === y ? 'on' : '') + '" data-act="year-pick" data-y="' + x + '">' + x + '</button>';
+    }).join('') + '</div>' : '';
+    var news = S.newDone.length ? '<div class="card green"><span class="chip white">Neu erfüllt (2/2)</span>' +
+      '<div class="body" style="color:var(--accent-dark)"><b>' + S.newDone.slice().sort(function (a, b) { return a - b; }).map(function (n) { return 'Garten ' + n; }).join(', ') + '</b></div>' +
+      '<button class="btn white self-start" data-act="done-seen">Gesehen</button></div>' : '';
+    var status = d.finished ? '<span class="chip red">Jahresabschluss</span>'
+      : '<span class="chip">Zwischenstand' + (d.last ? ' · letzter Termin ' + dShort(d.last).slice(4, 10) : '') + '</span>';
+    var doneChips = d.done.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px">' + d.done.map(function (r) {
+      return '<span class="badge" style="background:var(--accent-soft);color:var(--accent-dark)">' + r.n + '</span>';
+    }).join('') + '</div>' : '<div class="small">Noch kein Garten mit zwei Einsätzen.</div>';
+    var openList = d.open.map(function (r) { return yearRow(y, r, true); }).join('') || '<div class="small">Alle Gärten haben erfüllt.</div>';
+    var exclList = d.excl.map(function (r) { return yearRow(y, r, false); }).join('');
+    return '<section>' + backBtn() + chips + news +
+      '<div class="card"><div class="between"><div class="h2">Gemeinschaftsarbeit ' + y + '</div></div>' + status +
+        '<div class="att-sum" style="grid-template-columns:repeat(2,minmax(0,1fr))">' +
+          '<div style="background:var(--accent-soft);color:var(--accent-dark)"><b>' + d.done.length + '</b>2/2 erfüllt</div>' +
+          '<div style="background:var(--sun);color:var(--sun-ink)"><b>' + d.one.length + '</b>1× dabei</div>' +
+          '<div style="background:var(--red-soft);color:var(--red-ink)"><b>' + d.zero.length + '</b>0× dabei</div>' +
+          '<div style="background:var(--line);color:var(--text2)"><b>' + d.excl.length + '</b>frei / befreit</div>' +
+        '</div>' +
+        '<div class="body">Offener Betrag: <b>' + d.sum.toLocaleString('de-DE') + ' €</b> (' + FEE + ' € pro fehlendem Einsatz)' +
+          (d.finished ? '' : '. Stand heute, es folgen noch Termine.') + '</div></div>' +
+      '<div class="card"><div class="h2">An Kassenwart</div>' +
+        '<label class="lbl" for="kw-mail">E-Mail Kassenwart</label>' +
+        '<input class="field sm" id="kw-mail" type="email" data-set="treasurer" placeholder="kasse@…" value="' + esc(S.treasurer) + '">' +
+        '<div class="row"><button class="btn primary" data-act="mail-kw">Per Mail senden</button></div>' +
+        '<button class="btn ghost" data-act="csv">Liste als Datei (Excel)</button>' +
+        '<div class="small">Die Mail enthält die Liste aller offenen Gärten mit Beträgen. Die Datei lässt sich zusätzlich anhängen oder teilen.</div></div>' +
+      '<div class="card"><div class="h2">Erfüllt (2/2)</div>' + doneChips + '</div>' +
+      '<div class="card"><div class="h2">Noch offen</div><div class="small">0× oder 1× dabei. Über „Vermerk“ den Grund eintragen oder den Garten als frei markieren.</div>' + openList + '</div>' +
+      (exclList ? '<div class="card"><div class="h2">Frei / befreit</div>' + exclList + '</div>' : '') +
+    '</section>';
+  }
+
+  function csvFor(y) {
+    var d = yearData(y);
+    var lines = ['Gemeinschaftsarbeit ' + y + ' – KGV Jägerteich – Stand ' + dShort(todayIso()).slice(4),
+      'Garten;Einsätze;Soll;Fehlend;Betrag €;Status;Vermerk'];
+    d.rows.forEach(function (r) {
+      var soll = r.excl ? 0 : 2, fehl = r.excl ? 0 : Math.max(0, 2 - r.c);
+      var st = r.note && r.note.status ? NOTE_STATUS[r.note.status] : (fehl ? 'offen' : 'erfüllt');
+      var tx = r.note && r.note.text ? String(r.note.text).replace(/[;\r\n]+/g, ' ') : '';
+      lines.push([r.n, r.c, soll, fehl, fehl * FEE, st, tx].join(';'));
+    });
+    lines.push(';;;;' + d.sum + ';Summe offen;');
+    return '﻿' + lines.join('\r\n');
+  }
+
+  function mailBody(y) {
+    var d = yearData(y);
+    var head = 'Moin,\n\nhier der ' + (d.finished ? 'Jahresabschluss' : 'Zwischenstand') + ' der Gemeinschaftsarbeit ' + y + ' (Stand ' + dShort(todayIso()).slice(4) + '):\n\n' +
+      '2/2 erfüllt: ' + d.done.length + ' Gärten\n1× dabei: ' + d.one.length + ' Gärten\n0× dabei: ' + d.zero.length + ' Gärten\nfrei/befreit: ' + d.excl.length + ' Gärten\n\n' +
+      'Offen (' + FEE + ' € pro fehlendem Einsatz):\n';
+    var rows = d.open.map(function (r) {
+      var t = r.note ? [r.note.status ? NOTE_STATUS[r.note.status] : '', r.note.text || ''].filter(Boolean).join(', ') : '';
+      return '- Garten ' + r.n + ': ' + r.c + '/2 → ' + ((2 - r.c) * FEE) + ' €' + (t ? ' (' + t + ')' : '');
+    }).join('\n');
+    return head + (rows || '- keine') + '\n\nSumme offen: ' + d.sum + ' €\n\nGesendet aus der Vereins-App (Testversion ' + APP_VERSION + ')';
   }
 
   function viewExc() {
@@ -759,7 +965,7 @@ nav.hidden{display:none}
   }
 
   var TITLES = { start: 'Moin!', boerse: 'Tauschbörse', termine: 'Termine', licht: 'Wegelicht', wetter: 'Temperaturen', settings: 'Einstellungen' };
-  var SUBTITLES = { plan: 'Planung', att: 'Anwesenheit', exc: 'Entschuldigungen' };
+  var SUBTITLES = { plan: 'Planung', att: 'Anwesenheit', exc: 'Entschuldigungen', year: 'Jahresübersicht' };
 
   function render() {
     var main = document.getElementById('main');
@@ -884,7 +1090,7 @@ nav.hidden{display:none}
         break;
       }
       case 'admin-logout': ui.admin = false; ui.sview = ''; render(); break;
-      case 'sview': ui.sview = b.dataset.v; render(); document.getElementById('main').scrollTop = 0; break;
+      case 'sview': ui.sview = b.dataset.v; ui.noteFor = ''; render(); document.getElementById('main').scrollTop = 0; break;
       // Admin: Planung
       case 'ga-add': {
         var d = document.getElementById('n-date').value, g = document.getElementById('n-group').value;
@@ -897,13 +1103,92 @@ nav.hidden{display:none}
         if (t && confirm('Termin am ' + dShort(t.date) + ' löschen?')) {
           S.ga = S.ga.filter(function (x) { return x.id !== t.id; });
           delete S.att[t.id];
+          // Verlegungen auf den gelöschten Termin auflösen
+          S.ga.forEach(function (x) {
+            var m = x.moved || {};
+            Object.keys(m).forEach(function (k) { if (m[k] === t.id) delete m[k]; });
+          });
           save(); rerenderKeepScroll();
         }
         break;
       // Admin: Anwesenheit
       case 'att-pick': ui.attFor = b.dataset.id; rerenderKeepScroll(); break;
-      case 'att-all': t = gaById(ui.attFor); if (t) { S.att[t.id] = gardensOf(t); save(); rerenderKeepScroll(); } break;
+      case 'att-all':
+        t = gaById(ui.attFor);
+        if (t) { var bA = countsFor(yearOf(t)); S.att[t.id] = gardensOf(t); noteNewlyDone(yearOf(t), bA); save(); rerenderKeepScroll(); }
+        break;
       case 'att-none': t = gaById(ui.attFor); if (t) { S.att[t.id] = []; save(); rerenderKeepScroll(); } break;
+      case 'att-add': {
+        t = gaById(ui.attFor); if (!t) return;
+        var an = parseInt(document.getElementById('att-add').value, 10);
+        if (!an || an < 1) { toast('Bitte eine Gartennummer eingeben.'); return; }
+        if (excluded(yearOf(t), an)) { toast('Garten ' + an + ' ist als frei/befreit vermerkt.'); return; }
+        if ((t.moved || {})[an]) { toast('Garten ' + an + ' ist auf einen anderen Termin verlegt.'); return; }
+        var bB = countsFor(yearOf(t));
+        t.add = t.add || [];
+        if (t.add.indexOf(an) < 0 && gardensOf(t).indexOf(an) < 0) t.add.push(an);
+        t.skip = (t.skip || []).filter(function (x) { return x !== an; });
+        var pl = S.att[t.id] || [];
+        if (pl.indexOf(an) < 0) pl.push(an);
+        S.att[t.id] = pl;
+        noteNewlyDone(yearOf(t), bB);
+        save(); rerenderKeepScroll(); break;
+      }
+      // Admin: Verlegen
+      case 'ga-move': {
+        var mg = parseInt(document.getElementById('m-garden').value, 10);
+        var from = gaById(document.getElementById('m-from').value), to = gaById(document.getElementById('m-to').value);
+        if (!mg || !from || !to) { toast('Bitte Garten und beide Termine wählen.'); return; }
+        if (from.id === to.id) { toast('Von und Nach sind derselbe Termin.'); return; }
+        if (gardensOf(from).indexOf(mg) < 0) { toast('Garten ' + mg + ' ist am ' + dShort(from.date).slice(4, 10) + ' nicht eingeplant.'); return; }
+        from.moved = from.moved || {}; from.moved[mg] = to.id;
+        to.add = to.add || []; if (to.add.indexOf(mg) < 0) to.add.push(mg);
+        to.skip = (to.skip || []).filter(function (x) { return x !== mg; });
+        save(); rerenderKeepScroll(); toast('Garten ' + mg + ' verlegt auf ' + dShort(to.date).slice(4, 10) + '.'); break;
+      }
+      case 'move-undo': {
+        var mf = gaById(b.dataset.from), mn = Number(b.dataset.n);
+        if (!mf || !mf.moved) return;
+        var mt = gaById(mf.moved[mn]);
+        delete mf.moved[mn];
+        if (mt) mt.add = (mt.add || []).filter(function (x) { return x !== mn; });
+        save(); rerenderKeepScroll(); break;
+      }
+      // Admin: Jahresübersicht
+      case 'year-pick': ui.year = b.dataset.y; ui.noteFor = ''; rerenderKeepScroll(); break;
+      case 'done-seen': S.newDone = []; save(); rerenderKeepScroll(); break;
+      case 'note-open': ui.noteFor = ui.noteFor === b.dataset.n ? '' : b.dataset.n; rerenderKeepScroll(); break;
+      case 'note-cancel': ui.noteFor = ''; rerenderKeepScroll(); break;
+      case 'note-save': {
+        var y = pickYear(), nn = b.dataset.n;
+        var st = document.getElementById('nt-status').value, tx = document.getElementById('nt-text').value.trim();
+        S.notes[y] = S.notes[y] || {};
+        if (!st && !tx) delete S.notes[y][nn]; else S.notes[y][nn] = { status: st, text: tx };
+        ui.noteFor = ''; save(); rerenderKeepScroll(); toast('Vermerk gespeichert.'); break;
+      }
+      case 'mail-kw': {
+        var yy = pickYear();
+        var to2 = (S.treasurer || '').trim();
+        var subj = 'Gemeinschaftsarbeit ' + yy + ' – ' + (yearData(yy).finished ? 'Jahresabschluss' : 'Zwischenstand');
+        location.href = 'mailto:' + encodeURIComponent(to2).replace('%40', '@') + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(mailBody(yy));
+        break;
+      }
+      case 'csv': {
+        var yc = pickYear(), name = 'gemeinschaftsarbeit-' + yc + '.csv';
+        var data = csvFor(yc);
+        var file = null;
+        try { file = new File([data], name, { type: 'text/csv' }); } catch (e) {}
+        if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({ files: [file], title: 'Gemeinschaftsarbeit ' + yc }).catch(function () {});
+        } else {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([data], { type: 'text/csv' }));
+          a.download = name; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+          toast('Liste gespeichert: ' + name);
+        }
+        break;
+      }
     }
   });
 
@@ -914,9 +1199,13 @@ nav.hidden{display:none}
     if (ds.att) {
       var t = gaById(ui.attFor); if (!t) return;
       var n = Number(ds.att), list = (S.att[t.id] || []).filter(function (x) { return x !== n; });
+      var before = countsFor(yearOf(t));
       if (el.checked) list.push(n);
-      S.att[t.id] = list; save(); rerenderKeepScroll(); return;
+      S.att[t.id] = list;
+      noteNewlyDone(yearOf(t), before);
+      save(); rerenderKeepScroll(); return;
     }
+    if (ds.set === 'treasurer') { S.treasurer = el.value.trim(); save(); toast('E-Mail gespeichert.'); return; }
     if (ds.ga) {
       var g = gaById(ds.ga); if (!g) return;
       if (ds.k === 'date') { if (!el.value) return; g.date = el.value; }
