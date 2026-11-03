@@ -101,6 +101,16 @@ textarea.field{padding:12px 14px;resize:none;min-height:96px}
 select.field{padding-right:8px}
 .field:focus{outline:none;border-color:var(--accent)}
 .field.sm{min-height:46px;font-size:17px;padding:0 10px}
+.field.big-in{min-height:66px;font-size:30px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:16px;font-weight:800;color:var(--text2)}
+.chk input{width:24px;height:24px;accent-color:var(--accent);flex-shrink:0}
+.cons{font-size:17px;color:var(--text2);min-height:24px}
+.warn{background:#FFF6DB;border:2px solid #E2C46A;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;color:#5A4307;font-size:16px}
+.warn.red{background:var(--red-soft);border-color:#E9A79C;color:var(--red-ink)}
+.cmp{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:2px solid var(--line)}
+.cmp .ln{display:flex;justify-content:space-between;gap:10px;font-size:16px}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:52px;padding:6px 0;border:none;border-bottom:2px solid var(--line);background:transparent;text-align:left;font-size:16px;color:var(--text)}
+.mrow .tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 
 .entry .title{font-size:21px;font-weight:900;line-height:1.2;word-break:break-word}
 .entry .garden{font-size:16px;font-weight:700;color:var(--muted)}
@@ -206,7 +216,7 @@ nav.hidden{display:none}
   'use strict';
 
   // Bei jedem Update hochzählen, zusammen mit VERSION in sw.js
-  var APP_VERSION = '0.3.0';
+  var APP_VERSION = '0.4.0';
   var COPYRIGHT = '© ' + new Date().getFullYear() + ' KGV Jägerteich';
   var ADMIN_PIN = '1234'; // nur Testversion
 
@@ -275,6 +285,7 @@ nav.hidden{display:none}
       notes: {},
       newDone: [],
       treasurer: '',
+      meters: { readings: [], vals: {}, dist: [] },
       log: [
         { garden: '48', ts: now - DAY - 3 * 3600000, min: 10 },
         { garden: '7', ts: now - 2 * DAY - 2 * 3600000, min: 5 }
@@ -699,6 +710,9 @@ nav.hidden{display:none}
       if (ui.sview === 'att') return viewAtt();
       if (ui.sview === 'exc') return viewExc();
       if (ui.sview === 'year') return viewYear();
+      if (ui.sview === 'meter') return viewMeter();
+      if (ui.sview === 'mread') return viewReading();
+      if (ui.sview === 'mround' && ui.rg) return viewRound();
     }
     var rd = S.remindDays;
     var admin;
@@ -716,6 +730,7 @@ nav.hidden{display:none}
         '<button class="set-btn" data-act="sview" data-v="att"><span>Anwesenheit abhaken</span><span>›</span></button>' +
         '<button class="set-btn" data-act="sview" data-v="exc"><span>Entschuldigungen</span><span>' + (openEx ? '<span class="cnt">' + openEx + '</span> ' : '') + '›</span></button>' +
         '<button class="set-btn" data-act="sview" data-v="year"><span>Jahresübersicht &amp; Abrechnung</span><span>' + (S.newDone.length ? '<span class="cnt">' + S.newDone.length + ' neu</span> ' : '') + '›</span></button>' +
+        '<button class="set-btn" data-act="sview" data-v="meter"><span>Zählerstände Wasser &amp; Strom</span><span>›</span></button>' +
         '<button class="link self-start" data-act="admin-logout">Adminbereich sperren</button></div>';
     }
     return '<section>' +
@@ -954,6 +969,415 @@ nav.hidden{display:none}
     return head + (rows || '- keine') + '\n\nSumme offen: ' + d.sum + ' €\n\nGesendet aus der Vereins-App (Testversion ' + APP_VERSION + ')';
   }
 
+  // ---------- Zählerstände ----------
+  var MT = { w: { name: 'Wasser', unit: 'm³', hi: 3 }, s: { name: 'Strom', unit: 'kWh', hi: 150 } };
+  var REASONS = { solar: 'Solar', speicher: 'Solar mit Speicher', other: 'Anderer Grund' };
+  var REASONS_FOR = { s: ['solar', 'speicher', 'other'], w: ['other'] };
+
+  function M() { if (!S.meters) S.meters = { readings: [], vals: {}, dist: [] }; return S.meters; }
+  function parseNum(v) {
+    if (v == null) return null;
+    var s = String(v).replace(/\s/g, '');
+    if (s === '') return null;
+    if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    var n = Number(s);
+    return isFinite(n) ? n : NaN;
+  }
+  function fmtN(n) { return (n == null || isNaN(n)) ? '–' : n.toLocaleString('de-DE', { maximumFractionDigits: 3 }); }
+  function fmtSigned(n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + fmtN(Math.abs(n)); }
+  function csvN(n) { return (n == null || isNaN(n)) ? '' : String(Math.round(n * 1000) / 1000).replace('.', ','); }
+  function numDraft(n) { return n == null ? '' : String(n).replace('.', ','); }
+  function parseRanges(str) {
+    var out = [];
+    String(str || '').split(/[,;\s]+/).forEach(function (p) {
+      var m = p.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+      if (m) { var a = +m[1], b = +m[2]; if (a > b) { var t = a; a = b; b = t; } for (var i = a; i <= b && i - a < 500; i++) out.push(i); }
+      else if (/^\d+$/.test(p)) out.push(+p);
+    });
+    return out.filter(function (n, i) { return n > 0 && out.indexOf(n) === i; }).sort(function (a, b) { return a - b; });
+  }
+  function rangesText(list) {
+    var out = [], i = 0;
+    while (i < list.length) {
+      var j = i;
+      while (j + 1 < list.length && list[j + 1] === list[j] + 1) j++;
+      out.push(j > i ? list[i] + '–' + list[j] : String(list[i]));
+      i = j + 1;
+    }
+    return out.join(', ');
+  }
+  function readingsSorted() {
+    return M().readings.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : a.created - b.created; });
+  }
+  function readingById(id) { var r = M().readings; for (var i = 0; i < r.length; i++) if (r[i].id === id) return r[i]; return null; }
+  function distById(id) { var d = M().dist; for (var i = 0; i < d.length; i++) if (d[i].id === id) return d[i]; return null; }
+  function getV(rid, key) { var v = M().vals[rid]; return (v && v[key]) || null; }
+  function prevOf(rid, key, k) {
+    var list = readingsSorted(), idx = -1;
+    for (var i = 0; i < list.length; i++) if (list[i].id === rid) idx = i;
+    for (var j = idx - 1; j >= 0; j--) { var v = getV(list[j].id, key); if (v && typeof v[k] === 'number') return { val: v[k], r: list[j] }; }
+    return null;
+  }
+  function consCalc(cur, prev, tausch) {
+    if (cur == null || isNaN(cur) || !prev) return null;
+    if (tausch && typeof tausch.alt === 'number' && typeof tausch.neu === 'number') return (tausch.alt - prev.val) + (cur - tausch.neu);
+    return cur - prev.val;
+  }
+  function consOf(rid, key, k) {
+    var v = getV(rid, key);
+    if (!v || typeof v[k] !== 'number') return null;
+    return consCalc(v[k], prevOf(rid, key, k), v[k + 'T']);
+  }
+  function meterGardens() {
+    var all = {};
+    S.groups.forEach(function (g) { for (var i = g.from; i <= g.to; i++) all[i] = 1; });
+    var vals = M().vals;
+    Object.keys(vals).forEach(function (rid) { Object.keys(vals[rid]).forEach(function (k) { if (/^g\d+$/.test(k)) all[k.slice(1)] = 1; }); });
+    M().dist.forEach(function (d) { d.gardens.forEach(function (n) { all[n] = 1; }); });
+    return Object.keys(all).map(Number).sort(function (a, b) { return a - b; });
+  }
+  function median(arr) {
+    if (!arr.length) return null;
+    var a = arr.slice().sort(function (x, y) { return x - y; }), m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+  function highInfo(rid, n, k, cons) {
+    if (cons == null || cons <= 0) return null;
+    var hi = MT[k].hi, key = 'g' + n;
+    var list = readingsSorted(), idx = -1, prevCons = null;
+    for (var i = 0; i < list.length; i++) if (list[i].id === rid) idx = i;
+    for (var j = idx - 1; j >= 0; j--) { var c = consOf(list[j].id, key, k); if (c != null) { prevCons = c; break; } }
+    if (prevCons != null && prevCons > 0 && cons > 2.5 * prevCons && cons - prevCons > hi) {
+      return 'deutlich mehr als bei der letzten Ablesung (' + fmtN(prevCons) + ' ' + MT[k].unit + ')';
+    }
+    var others = meterGardens().filter(function (x) { return x !== n; }).map(function (x) { return consOf(rid, 'g' + x, k); }).filter(function (c) { return c != null && c > 0; });
+    var med = others.length >= 5 ? median(others) : null;
+    if (med != null && cons > 3 * med && cons - med > hi) {
+      return 'mehr als das Dreifache des üblichen Verbrauchs (Mittel ' + fmtN(med) + ' ' + MT[k].unit + ')';
+    }
+    return null;
+  }
+  function gardenDone(rid, n) { var v = getV(rid, 'g' + n); return !!(v && typeof v.w === 'number' && typeof v.s === 'number'); }
+  function hintParts(v, k) {
+    var p = [];
+    if (!v) return p;
+    if (v[k + 'T']) p.push('Zählertausch: alt ' + fmtN(v[k + 'T'].alt) + ', neu ' + fmtN(v[k + 'T'].neu));
+    if (v[k + 'R']) p.push(REASONS[v[k + 'R'].code] + (v[k + 'R'].text ? ': ' + v[k + 'R'].text : ''));
+    if (v[k + 'Ok']) p.push('hoch, geprüft');
+    return p;
+  }
+  function compareRows(rid) {
+    var gs = meterGardens(), rows = [];
+    ['w', 's'].forEach(function (k) {
+      var vals = gs.map(function (n) { return consOf(rid, 'g' + n, k); }).filter(function (c) { return c != null; });
+      rows.push({ label: 'Hauptzähler ' + MT[k].name, k: k, ref: consOf(rid, 'main', k),
+        sum: vals.reduce(function (a, b) { return a + b; }, 0), n: vals.length, of: gs.length, main: true });
+    });
+    M().dist.forEach(function (d) {
+      var vals = d.gardens.map(function (n) { return consOf(rid, 'g' + n, d.type); }).filter(function (c) { return c != null; });
+      rows.push({ label: d.name, k: d.type, ref: consOf(rid, 'd' + d.id, 'v'),
+        sum: vals.reduce(function (a, b) { return a + b; }, 0), n: vals.length, of: d.gardens.length, gardens: d.gardens });
+    });
+    return rows;
+  }
+  function seasonName(iso) { var d = parseIso(iso); return (d.getMonth() < 6 ? 'Frühjahr ' : 'Herbst ') + d.getFullYear(); }
+
+  function shareOrDownload(data, name, title) {
+    var file = null;
+    try { file = new File([data], name, { type: 'text/csv' }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: title }).catch(function () {});
+    } else {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([data], { type: 'text/csv' }));
+      a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      toast('Liste gespeichert: ' + name);
+    }
+  }
+
+  function meterCsv(rid) {
+    var r = readingById(rid), gs = meterGardens();
+    var lines = ['Zählerstände ' + r.name + ' (' + dShort(r.date).slice(4) + ') – KGV Jägerteich',
+      'Garten / Zähler;Wasser Stand;Wasser Verbrauch m³;Wasser Hinweis;Strom Stand;Strom Verbrauch kWh;Strom Hinweis'];
+    gs.forEach(function (n) {
+      var v = getV(rid, 'g' + n) || {};
+      lines.push([n,
+        csvN(v.w), csvN(consOf(rid, 'g' + n, 'w')), hintParts(v, 'w').join(' / ').replace(/;/g, ','),
+        csvN(v.s), csvN(consOf(rid, 'g' + n, 's')), hintParts(v, 's').join(' / ').replace(/;/g, ',')].join(';'));
+    });
+    var mv = getV(rid, 'main') || {};
+    lines.push('');
+    lines.push(['Hauptzähler', csvN(mv.w), csvN(consOf(rid, 'main', 'w')), '', csvN(mv.s), csvN(consOf(rid, 'main', 's')), ''].join(';'));
+    M().dist.forEach(function (d) {
+      var dv = getV(rid, 'd' + d.id) || {}, c = consOf(rid, 'd' + d.id, 'v');
+      var row = d.type === 'w' ? [d.name, csvN(dv.v), csvN(c), 'Gärten ' + rangesText(d.gardens), '', '', '']
+                               : [d.name, '', '', '', csvN(dv.v), csvN(c), 'Gärten ' + rangesText(d.gardens)];
+      lines.push(row.join(';'));
+    });
+    lines.push('');
+    lines.push('Vergleich;Zähler;Summe Gärten;Differenz;Differenz %;Gärten erfasst');
+    compareRows(rid).forEach(function (c) {
+      var diff = c.ref != null ? c.ref - c.sum : null;
+      lines.push([c.label + ' (' + MT[c.k].unit + ')', csvN(c.ref), csvN(c.sum), csvN(diff),
+        (diff != null && c.ref) ? csvN(diff / c.ref * 100) : '', c.n + ' von ' + c.of].join(';'));
+    });
+    return '﻿' + lines.join('\r\n');
+  }
+
+  function meterMail(rid) {
+    var r = readingById(rid), gs = meterGardens();
+    var txt = 'Moin,\n\nhier die Zählerstände der Ablesung „' + r.name + '“ vom ' + dShort(r.date).slice(4) + '.\n\n';
+    var cmp = compareRows(rid).map(function (c) {
+      if (c.ref == null) return '- ' + c.label + ': Verbrauch ab der nächsten Ablesung';
+      var diff = c.ref - c.sum;
+      return '- ' + c.label + ': Zähler ' + fmtN(c.ref) + ' ' + MT[c.k].unit + ', Gärten ' + fmtN(c.sum) + ' ' + MT[c.k].unit +
+        ' (' + c.n + '/' + c.of + '), Differenz ' + fmtSigned(diff) + (c.ref ? ' (' + fmtN(Math.round(diff / c.ref * 1000) / 10) + ' %)' : '');
+    }).join('\n');
+    txt += 'Vergleich:\n' + cmp + '\n\nGärten (Stand / Verbrauch):\n';
+    var missing = [];
+    gs.forEach(function (n) {
+      var v = getV(rid, 'g' + n);
+      if (!v || (typeof v.w !== 'number' && typeof v.s !== 'number')) { missing.push(n); return; }
+      var part = function (k) {
+        if (typeof v[k] !== 'number') return MT[k].name.charAt(0) + ' –';
+        var c = consOf(rid, 'g' + n, k);
+        return MT[k].name.charAt(0) + ' ' + fmtN(v[k]) + (c != null ? ' (' + fmtSigned(c) + ' ' + MT[k].unit + ')' : '');
+      };
+      var h = hintParts(v, 'w').concat(hintParts(v, 's'));
+      txt += 'G' + n + ': ' + part('w') + ' | ' + part('s') + (h.length ? ' [' + h.join('; ') + ']' : '') + '\n';
+    });
+    if (missing.length) txt += '\nNicht erfasst: ' + rangesText(missing) + '\n';
+    return txt + '\nDie vollständige Liste hängt als CSV an bzw. lässt sich aus der App teilen.\n\nGesendet aus der Vereins-App (Testversion ' + APP_VERSION + ')';
+  }
+
+  function viewMeter() {
+    var list = readingsSorted().reverse().map(function (r) {
+      var gs = meterGardens(), done = gs.filter(function (n) { return gardenDone(r.id, n); }).length;
+      return '<div class="ga-edit"><div class="between"><span class="h3">' + esc(r.name) + '</span><span class="small">' + dShort(r.date).slice(4) + '</span></div>' +
+        '<div class="small">' + done + ' von ' + gs.length + ' Gärten komplett erfasst</div>' +
+        '<div class="row"><button class="btn" data-act="mread-open" data-id="' + r.id + '">Öffnen</button>' +
+        '<button class="btn danger" data-act="mread-del" data-id="' + r.id + '" style="flex:0 0 auto">Löschen</button></div></div>';
+    }).join('') || '<div class="small">Noch keine Ablesung angelegt.</div>';
+    var dist = M().dist.map(function (d) {
+      return '<div class="ga-edit">' +
+        '<div><div class="mini-lbl">Name</div><input class="field sm" data-dist="' + d.id + '" data-k="name" value="' + esc(d.name) + '" aria-label="Name Verteiler"></div>' +
+        '<div class="two"><div><div class="mini-lbl">Art</div><select class="field sm" data-dist="' + d.id + '" data-k="type" aria-label="Art">' +
+          '<option value="s"' + (d.type === 's' ? ' selected' : '') + '>Strom</option><option value="w"' + (d.type === 'w' ? ' selected' : '') + '>Wasser</option></select></div>' +
+        '<div><div class="mini-lbl">Gärten</div><input class="field sm" data-dist="' + d.id + '" data-k="gardens" value="' + rangesText(d.gardens) + '" placeholder="z. B. 2-16, 20" aria-label="Angeschlossene Gärten"></div></div>' +
+        '<div class="between"><span class="small">' + d.gardens.length + ' Gärten angeschlossen</span><button class="btn danger" style="min-height:44px" data-act="dist-del" data-id="' + d.id + '">Löschen</button></div></div>';
+    }).join('');
+    var today = todayIso();
+    return '<section>' + backBtn() +
+      '<div class="card"><div class="h2">Neue Ablesung</div>' +
+        '<div class="two"><div><div class="mini-lbl">Name</div><input class="field sm" id="r-name" value="' + seasonName(today) + '" aria-label="Name der Ablesung"></div>' +
+        '<div><div class="mini-lbl">Datum</div><input class="field sm" id="r-date" type="date" value="' + today + '" aria-label="Datum der Ablesung"></div></div>' +
+        '<button class="btn primary" data-act="mread-add">Ablesung anlegen</button>' +
+        '<div class="small">Zweimal im Jahr. Der Verbrauch wird jeweils zur vorherigen Ablesung berechnet. Zählernummer = Gartennummer.</div></div>' +
+      '<div class="card"><div class="h2">Ablesungen</div>' + list + '</div>' +
+      '<div class="card"><div class="h2">Verteiler mit Zähler</div>' +
+        '<div class="small">Ein Verteiler versorgt mehrere Gärten. Die App vergleicht seinen Verbrauch mit der Summe dieser Gärten.</div>' +
+        dist +
+        '<div class="ga-edit"><div class="mini-lbl">Neuer Verteiler</div>' +
+          '<input class="field sm" id="d-name" placeholder="z. B. Verteiler Am Eiskeller" aria-label="Name neuer Verteiler">' +
+          '<div class="two"><select class="field sm" id="d-type" aria-label="Art neuer Verteiler"><option value="s">Strom</option><option value="w">Wasser</option></select>' +
+          '<input class="field sm" id="d-gardens" placeholder="Gärten, z. B. 2-16" aria-label="Gärten neuer Verteiler"></div>' +
+          '<button class="btn" data-act="dist-add">Verteiler anlegen</button></div></div>' +
+      '<div class="demo"><div class="ttl">Nur Test</div><div class="body" style="color:inherit;padding-bottom:6px">Erzeugt eine Ablesung „Herbst 2026“ mit Beispielständen als Startwerte und einen Beispiel-Verteiler. Danach eine neue Ablesung anlegen und im Rundgang Werte eintragen, dann wird der Verbrauch gerechnet.</div>' +
+        '<button class="btn" style="margin-bottom:10px" data-act="meter-demo">Beispieldaten erzeugen</button></div>' +
+    '</section>';
+  }
+
+  function cmpHtml(c) {
+    var u = MT[c.k].unit;
+    if (c.ref == null) return '<div class="cmp"><b>' + esc(c.label) + '</b><span class="small">Verbrauch ab der nächsten Ablesung (Zählerstand fehlt oder ist Startwert).</span></div>';
+    var diff = c.ref - c.sum, pct = c.ref ? diff / c.ref * 100 : 0;
+    var limit = c.main ? 10 : 5;
+    var bad = c.n === c.of && Math.abs(Math.round(pct * 10) / 10) >= limit;
+    return '<div class="cmp"><b>' + esc(c.label) + '</b>' +
+      '<div class="ln"><span>Zähler</span><span>' + fmtN(c.ref) + ' ' + u + '</span></div>' +
+      '<div class="ln"><span>Summe Gärten (' + c.n + ' von ' + c.of + ')</span><span>' + fmtN(c.sum) + ' ' + u + '</span></div>' +
+      '<div class="ln" style="font-weight:900;color:' + (bad ? 'var(--red-ink)' : 'var(--accent-dark)') + '"><span>Differenz</span><span>' + fmtSigned(diff) + ' ' + u + ' (' + fmtN(Math.round(pct * 10) / 10) + ' %)</span></div>' +
+      (c.n < c.of ? '<span class="small">Noch nicht alle Gärten erfasst, Vergleich vorläufig.</span>' : '') +
+      (bad && !c.main ? '<div class="warn red">Abweichung ab ' + limit + ' %. ' + (diff > 0
+        ? 'Der Verteiler zählt mehr als die Gärten: ein Gartenzähler läuft zu langsam, ist falsch abgelesen, oder es hängt ein Verbraucher ohne eigenen Zähler dran.'
+        : 'Die Gärten zählen mehr als der Verteiler: ein Stand ist falsch abgelesen, oder ein Garten ist einem falschen Verteiler zugeordnet.') + '</div>' : '') +
+      (c.main ? '<span class="small">Enthält auch Vereinsheim, Wege und Verluste.</span>' : '') + '</div>';
+  }
+
+  function viewReading() {
+    var r = readingById(ui.mread);
+    if (!r) { ui.sview = 'meter'; return viewMeter(); }
+    var gs = meterGardens();
+    var done = gs.filter(function (n) { return gardenDone(r.id, n); }).length;
+    var f = ui.mfilter || 'alle';
+    var rows = gs.filter(function (n) {
+      var v = getV(r.id, 'g' + n);
+      if (f === 'offen') return !gardenDone(r.id, n);
+      if (f === 'hinweis') return v && (hintParts(v, 'w').length || hintParts(v, 's').length);
+      return true;
+    }).map(function (n) {
+      var v = getV(r.id, 'g' + n) || {};
+      var part = function (k) {
+        if (typeof v[k] !== 'number') return '<span class="small">' + MT[k].name.charAt(0) + ' –</span>';
+        var c = consOf(r.id, 'g' + n, k);
+        return '<span class="small">' + MT[k].name.charAt(0) + ' ' + (c != null ? '<b style="color:' + (c < 0 ? 'var(--red-ink)' : 'var(--text)') + '">' + fmtSigned(c) + '</b> ' + MT[k].unit : fmtN(v[k])) + '</span>';
+      };
+      var tags = [];
+      if (v.wT || v.sT) tags.push('<span class="tag add">Tausch</span>');
+      if (v.sR && v.sR.code !== 'other') tags.push('<span class="tag exc">' + REASONS[v.sR.code] + '</span>');
+      if ((v.wR && v.wR.code === 'other') || (v.sR && v.sR.code === 'other')) tags.push('<span class="tag exc">Grund</span>');
+      if (v.wOk || v.sOk) tags.push('<span class="tag" style="background:#FFF6DB;color:#5A4307">hoch</span>');
+      if (!gardenDone(r.id, n)) tags.push('<span class="tag" style="background:var(--red-soft);color:var(--red-ink)">offen</span>');
+      return '<button class="mrow" data-act="rg-at" data-n="' + n + '"><span style="display:flex;flex-direction:column;gap:2px"><b>Garten ' + n + '</b><span style="display:flex;gap:10px">' + part('w') + part('s') + '</span></span>' +
+        '<span class="tags">' + tags.join('') + '</span></button>';
+    }).join('') || '<div class="small">Keine Gärten in dieser Auswahl.</div>';
+    var mv = getV(r.id, 'main') || {};
+    var mainIn = ['w', 's'].map(function (k) {
+      var p = prevOf(r.id, 'main', k);
+      return '<div><div class="mini-lbl">Haupt ' + MT[k].name + ' (' + MT[k].unit + ')</div><input class="field sm" inputmode="decimal" data-mv="main" data-k="' + k + '" value="' + numDraft(mv[k]) + '" aria-label="Hauptzähler ' + MT[k].name + '">' +
+        '<div class="small">' + (p ? 'zuletzt ' + fmtN(p.val) : 'Startwert') + '</div></div>';
+    }).join('');
+    var distIn = M().dist.map(function (d) {
+      var dv = getV(r.id, 'd' + d.id) || {}, p = prevOf(r.id, 'd' + d.id, 'v');
+      return '<div><div class="mini-lbl">' + esc(d.name) + ' (' + MT[d.type].unit + ')</div><input class="field sm" inputmode="decimal" data-mv="d' + d.id + '" data-k="v" value="' + numDraft(dv.v) + '" aria-label="' + esc(d.name) + '">' +
+        '<div class="small">' + (p ? 'zuletzt ' + fmtN(p.val) : 'Startwert') + '</div></div>';
+    }).join('');
+    var fseg = '<div class="seg" role="group" aria-label="Filter">' +
+      [['alle', 'Alle'], ['offen', 'Offen'], ['hinweis', 'Hinweise']].map(function (x) { return '<button class="' + (f === x[0] ? 'on' : '') + '" data-act="mfilter" data-f="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    return '<section><button class="back" data-act="sview" data-v="meter">‹ Zähler</button>' +
+      '<div class="card green"><span class="chip white">' + dShort(r.date).slice(4) + '</span><div class="big">' + esc(r.name) + '</div>' +
+        '<div class="body" style="color:var(--accent-dark)"><b>' + done + ' von ' + gs.length + '</b> Gärten komplett erfasst, noch ' + (gs.length - done) + ' offen.</div>' +
+        '<button class="btn primary" data-act="rg-start">' + (done ? 'Rundgang fortsetzen' : 'Rundgang starten') + '</button></div>' +
+      '<div class="card"><div class="h2">Hauptzähler &amp; Verteiler</div><div class="two">' + mainIn + '</div>' +
+        (distIn ? '<div class="two">' + distIn + '</div>' : '<div class="small">Noch keine Verteiler angelegt (unter „Zähler“).</div>') + '</div>' +
+      '<div class="card"><div class="h2">Vergleich</div>' + compareRows(r.id).map(cmpHtml).join('') + '</div>' +
+      '<div class="card"><div class="h2">An Kassenwart</div>' +
+        '<label class="lbl" for="kw-mail2">E-Mail Kassenwart</label>' +
+        '<input class="field sm" id="kw-mail2" type="email" data-set="treasurer" placeholder="kasse@…" value="' + esc(S.treasurer) + '">' +
+        '<button class="btn primary" data-act="meter-mail">Per Mail senden</button>' +
+        '<button class="btn ghost" data-act="meter-csv">Liste als Datei (Excel)</button>' +
+        '<div class="small">Preise kommen später dazu, sobald sie feststehen.</div></div>' +
+      '<div class="card"><div class="h2">Gärten</div>' + fseg + rows + '</div>' +
+    '</section>';
+  }
+
+  // Rundgang
+  function draftFrom(rid, n) {
+    var v = getV(rid, 'g' + n) || {};
+    var d = { wOk: !!v.wOk, sOk: !!v.sOk };
+    ['w', 's'].forEach(function (k) {
+      d[k] = numDraft(v[k]);
+      d[k + 'T'] = !!v[k + 'T'];
+      d[k + 'Alt'] = v[k + 'T'] ? numDraft(v[k + 'T'].alt) : '';
+      d[k + 'Neu'] = v[k + 'T'] ? numDraft(v[k + 'T'].neu) : '';
+      d[k + 'R'] = v[k + 'R'] ? v[k + 'R'].code : '';
+      d[k + 'Rt'] = v[k + 'R'] ? v[k + 'R'].text : '';
+    });
+    return d;
+  }
+  function rgGo(rid, n) {
+    var gs = meterGardens(), idx;
+    if (n != null) idx = gs.indexOf(n);
+    else { idx = -1; for (var i = 0; i < gs.length; i++) if (!gardenDone(rid, gs[i])) { idx = i; break; } }
+    if (idx < 0) idx = 0;
+    ui.rg = { rid: rid, idx: idx, draft: draftFrom(rid, gs[idx]), issues: {} };
+    ui.sview = 'mround';
+  }
+  function rgMove(idx) {
+    var gs = meterGardens();
+    idx = Math.max(0, Math.min(gs.length - 1, idx));
+    ui.rg.idx = idx; ui.rg.draft = draftFrom(ui.rg.rid, gs[idx]); ui.rg.issues = {};
+  }
+  function draftTausch(k) {
+    var d = ui.rg.draft;
+    return d[k + 'T'] ? { alt: parseNum(d[k + 'Alt']), neu: parseNum(d[k + 'Neu']) } : null;
+  }
+  function draftCons(k) {
+    var n = meterGardens()[ui.rg.idx], cur = parseNum(ui.rg.draft[k]);
+    return consCalc(cur, prevOf(ui.rg.rid, 'g' + n, k), draftTausch(k));
+  }
+  function consText(k) {
+    var n = meterGardens()[ui.rg.idx], p = prevOf(ui.rg.rid, 'g' + n, k), c = draftCons(k);
+    if (!p) return 'Startwert, Verbrauch ab der nächsten Ablesung';
+    if (c == null) return '';
+    return 'Verbrauch: <b style="color:' + (c < 0 ? 'var(--red-ink)' : 'var(--accent-dark)') + '">' + fmtSigned(c) + ' ' + MT[k].unit + '</b>';
+  }
+  function typeBlock(k, n) {
+    var d = ui.rg.draft, rid = ui.rg.rid, p = prevOf(rid, 'g' + n, k), iss = ui.rg.issues[k];
+    var h = '<div class="card"><div class="between"><div class="h2">' + MT[k].name + '</div><span class="chip">' + MT[k].unit + '</span></div>' +
+      '<div class="small">' + (p ? 'Letzte Ablesung (' + esc(p.r.name) + '): <b>' + fmtN(p.val) + '</b>' : 'Erste Ablesung, der Wert ist der Startwert.') + '</div>' +
+      '<input class="field big-in" type="text" inputmode="decimal" autocomplete="off" data-dr="' + k + '" value="' + esc(d[k]) + '" placeholder="Zählerstand" aria-label="' + MT[k].name + ' Zählerstand Garten ' + n + '">' +
+      '<label class="chk"><input type="checkbox" data-dr="' + k + 'T"' + (d[k + 'T'] ? ' checked' : '') + '> Zähler getauscht</label>';
+    if (d[k + 'T']) {
+      h += '<div class="two"><div><div class="mini-lbl">Endstand alter Zähler</div><input class="field sm" inputmode="decimal" data-dr="' + k + 'Alt" value="' + esc(d[k + 'Alt']) + '" aria-label="Endstand alter Zähler"></div>' +
+        '<div><div class="mini-lbl">Startstand neuer Zähler</div><input class="field sm" inputmode="decimal" data-dr="' + k + 'Neu" value="' + esc(d[k + 'Neu']) + '" aria-label="Startstand neuer Zähler"></div></div>' +
+        '<div class="small">Oben den aktuellen Stand des neuen Zählers eintragen.</div>';
+    }
+    h += '<div class="cons" id="cons-' + k + '">' + consText(k) + '</div>';
+    if (iss === 'nan') h += '<div class="warn red">Bitte eine gültige Zahl eintragen.</div>';
+    if (iss === 'tausch') h += '<div class="warn red">Bitte Endstand des alten und Startstand des neuen Zählers eintragen.</div>';
+    if (iss === 'neg' || d[k + 'R']) {
+      h += '<div class="warn red"><b>Minusverbrauch.</b> Bitte Grund angeben:' +
+        REASONS_FOR[k].map(function (code) {
+          return '<label class="chk" style="color:inherit"><input type="radio" name="r-' + k + '" data-dr="' + k + 'R" value="' + code + '"' + (d[k + 'R'] === code ? ' checked' : '') + '> ' + REASONS[code] + '</label>';
+        }).join('') +
+        '<input class="field sm" data-dr="' + k + 'Rt" value="' + esc(d[k + 'Rt']) + '" placeholder="Erläuterung' + (k === 'w' ? ' (Pflicht)' : ' (bei „Anderer Grund“ Pflicht)') + '" aria-label="Erläuterung"></div>';
+    }
+    if (iss === 'high' || d[k + 'Ok']) {
+      var info = highInfo(rid, n, k, draftCons(k));
+      h += '<div class="warn"><b>Ungewöhnlich hoch.</b>' + (info ? '<span>Der Verbrauch ist ' + info + '.</span>' : '') +
+        '<label class="chk" style="color:inherit"><input type="checkbox" data-dr="' + k + 'Ok"' + (d[k + 'Ok'] ? ' checked' : '') + '> Wert geprüft, stimmt</label></div>';
+    }
+    return h + '</div>';
+  }
+  function viewRound() {
+    var rg = ui.rg, r = readingById(rg.rid), gs = meterGardens(), n = gs[rg.idx];
+    var done = gs.filter(function (x) { return gardenDone(rg.rid, x); }).length;
+    return '<section><button class="back" data-act="rg-exit">‹ ' + esc(r ? r.name : 'Ablesung') + '</button>' +
+      '<div class="card green"><div class="between"><div class="big" style="font-size:34px">Garten ' + n + '</div>' +
+        (gardenDone(rg.rid, n) ? '<span class="chip white">erfasst</span>' : '') + '</div>' +
+        '<div class="small" style="color:var(--accent-dark)">Zähler-Nr. ' + n + ' · ' + done + ' von ' + gs.length + ' erfasst · noch ' + (gs.length - done) + ' offen</div>' +
+        '<div class="row"><button class="btn white" data-act="rg-prev"' + (rg.idx === 0 ? ' disabled' : '') + '>‹ Zurück</button>' +
+        '<button class="btn white" data-act="rg-skip">Überspringen ›</button></div>' +
+        '<div class="row"><input class="field sm" id="rg-jump" type="number" inputmode="numeric" placeholder="Springe zu Garten" aria-label="Springe zu Garten" style="flex:1 1 120px">' +
+        '<button class="btn white" data-act="rg-jump" style="flex:0 0 auto">Los</button></div></div>' +
+      typeBlock('w', n) + typeBlock('s', n) +
+      '<button class="btn primary" data-act="rg-save">Speichern &amp; weiter</button>' +
+      '<button class="link" data-act="rg-exit">Rundgang beenden</button>' +
+    '</section>';
+  }
+  function rgSave() {
+    var rg = ui.rg, d = rg.draft, gs = meterGardens(), n = gs[rg.idx], rid = rg.rid, issues = {}, rec = {};
+    ['w', 's'].forEach(function (k) {
+      var cur = parseNum(d[k]);
+      if (cur === null) return;
+      if (isNaN(cur)) { issues[k] = 'nan'; return; }
+      rec[k] = cur;
+      if (d[k + 'T']) {
+        var t = draftTausch(k);
+        if (t.alt == null || t.neu == null || isNaN(t.alt) || isNaN(t.neu)) { issues[k] = 'tausch'; return; }
+        rec[k + 'T'] = t;
+      }
+      var c = consCalc(cur, prevOf(rid, 'g' + n, k), rec[k + 'T']);
+      if (c != null && c < 0) {
+        var code = d[k + 'R'], txt = String(d[k + 'Rt'] || '').trim();
+        if (!code || ((code === 'other' || k === 'w') && !txt)) { issues[k] = 'neg'; return; }
+        rec[k + 'R'] = { code: code, text: txt };
+      }
+      if (highInfo(rid, n, k, c)) {
+        if (!d[k + 'Ok']) { issues[k] = 'high'; return; }
+        rec[k + 'Ok'] = true;
+      }
+    });
+    if (Object.keys(issues).length) { rg.issues = issues; render(); toast('Bitte die Hinweise prüfen.'); return; }
+    var vals = M().vals[rid] = M().vals[rid] || {};
+    if (Object.keys(rec).length) vals['g' + n] = rec; else delete vals['g' + n];
+    save();
+    if (rg.idx < gs.length - 1) { rgMove(rg.idx + 1); render(); document.getElementById('main').scrollTop = 0; toast('Garten ' + n + ' gespeichert.'); }
+    else { ui.sview = 'mread'; ui.rg = null; render(); toast('Rundgang am Ende angekommen.'); }
+  }
+
   function viewExc() {
     var list = S.excuses.slice().sort(function (a, b) { return b.ts - a.ts; }).map(function (x) {
       var t = gaById(x.terminId);
@@ -965,7 +1389,7 @@ nav.hidden{display:none}
   }
 
   var TITLES = { start: 'Moin!', boerse: 'Tauschbörse', termine: 'Termine', licht: 'Wegelicht', wetter: 'Temperaturen', settings: 'Einstellungen' };
-  var SUBTITLES = { plan: 'Planung', att: 'Anwesenheit', exc: 'Entschuldigungen', year: 'Jahresübersicht' };
+  var SUBTITLES = { plan: 'Planung', att: 'Anwesenheit', exc: 'Entschuldigungen', year: 'Jahresübersicht', meter: 'Zähler', mread: 'Ablesung', mround: 'Rundgang' };
 
   function render() {
     var main = document.getElementById('main');
@@ -1189,6 +1613,72 @@ nav.hidden{display:none}
         }
         break;
       }
+      // Zählerstände
+      case 'mread-add': {
+        var rn = document.getElementById('r-name').value.trim(), rdt = document.getElementById('r-date').value;
+        if (!rn || !rdt) { toast('Bitte Name und Datum angeben.'); return; }
+        var nr = { id: 'r' + (S.nextId++), name: rn, date: rdt, created: Date.now() };
+        M().readings.push(nr); save();
+        ui.mread = nr.id; ui.sview = 'mread'; ui.mfilter = 'alle'; render(); document.getElementById('main').scrollTop = 0;
+        toast('Ablesung angelegt.'); break;
+      }
+      case 'mread-open': ui.mread = b.dataset.id; ui.sview = 'mread'; ui.mfilter = 'alle'; render(); document.getElementById('main').scrollTop = 0; break;
+      case 'mread-del': {
+        var dr = readingById(b.dataset.id);
+        if (dr && confirm('Ablesung „' + dr.name + '“ mit allen Werten löschen?')) {
+          M().readings = M().readings.filter(function (x) { return x.id !== dr.id; });
+          delete M().vals[dr.id]; save(); rerenderKeepScroll();
+        }
+        break;
+      }
+      case 'mfilter': ui.mfilter = b.dataset.f; rerenderKeepScroll(); break;
+      case 'dist-add': {
+        var dn = document.getElementById('d-name').value.trim(), dg = parseRanges(document.getElementById('d-gardens').value);
+        if (!dn || !dg.length) { toast('Bitte Name und Gärten angeben.'); return; }
+        M().dist.push({ id: 'v' + (S.nextId++), name: dn, type: document.getElementById('d-type').value, gardens: dg });
+        save(); rerenderKeepScroll(); toast('Verteiler angelegt.'); break;
+      }
+      case 'dist-del': {
+        var dd = distById(b.dataset.id);
+        if (dd && confirm('Verteiler „' + dd.name + '“ löschen?')) { M().dist = M().dist.filter(function (x) { return x.id !== dd.id; }); save(); rerenderKeepScroll(); }
+        break;
+      }
+      case 'meter-demo': {
+        var demo = { id: 'r' + (S.nextId++), name: 'Herbst 2026', date: '2026-10-17', created: Date.now() - 1000 };
+        var dv = {};
+        meterGardens().forEach(function (gn) {
+          dv['g' + gn] = { w: Math.round((80 + (gn * 37) % 420 + (gn % 7) / 10) * 10) / 10, s: 800 + (gn * 389) % 5200 };
+        });
+        dv.main = { w: 18450.5, s: 412300 };
+        if (!M().dist.length) M().dist.push({ id: 'v' + (S.nextId++), name: 'Verteiler Nord (Strom)', type: 's', gardens: parseRanges('2-30') });
+        M().dist.forEach(function (x) { dv['d' + x.id] = { v: 98000 + x.gardens.length * 10 }; });
+        M().readings.push(demo); M().vals[demo.id] = dv; save(); rerenderKeepScroll();
+        toast('Beispiel-Ablesung „Herbst 2026“ erzeugt.'); break;
+      }
+      case 'meter-mail': {
+        var mr = readingById(ui.mread); if (!mr) return;
+        location.href = 'mailto:' + encodeURIComponent((S.treasurer || '').trim()).replace('%40', '@') +
+          '?subject=' + encodeURIComponent('Zählerstände ' + mr.name) + '&body=' + encodeURIComponent(meterMail(mr.id));
+        break;
+      }
+      case 'meter-csv': {
+        var cr = readingById(ui.mread); if (!cr) return;
+        shareOrDownload(meterCsv(cr.id), 'zaehlerstaende-' + cr.date + '.csv', 'Zählerstände ' + cr.name);
+        break;
+      }
+      case 'rg-start': rgGo(ui.mread, null); render(); document.getElementById('main').scrollTop = 0; break;
+      case 'rg-at': rgGo(ui.mread, Number(b.dataset.n)); render(); document.getElementById('main').scrollTop = 0; break;
+      case 'rg-prev': rgMove(ui.rg.idx - 1); render(); document.getElementById('main').scrollTop = 0; break;
+      case 'rg-skip':
+        if (ui.rg.idx >= meterGardens().length - 1) { toast('Letzter Garten erreicht.'); return; }
+        rgMove(ui.rg.idx + 1); render(); document.getElementById('main').scrollTop = 0; break;
+      case 'rg-jump': {
+        var jn = parseInt(document.getElementById('rg-jump').value, 10), jgs = meterGardens();
+        if (jgs.indexOf(jn) < 0) { toast('Garten ' + (jn || '?') + ' gibt es nicht.'); return; }
+        rgMove(jgs.indexOf(jn)); render(); document.getElementById('main').scrollTop = 0; break;
+      }
+      case 'rg-save': rgSave(); break;
+      case 'rg-exit': ui.sview = 'mread'; ui.rg = null; render(); break;
     }
   });
 
@@ -1206,6 +1696,32 @@ nav.hidden{display:none}
       save(); rerenderKeepScroll(); return;
     }
     if (ds.set === 'treasurer') { S.treasurer = el.value.trim(); save(); toast('E-Mail gespeichert.'); return; }
+    if (ds.dr && ui.rg) {
+      var key = ds.dr;
+      if (el.type === 'checkbox') {
+        ui.rg.draft[key] = el.checked;
+        if (/T$/.test(key)) rerenderKeepScroll();
+      } else if (el.type === 'radio') {
+        ui.rg.draft[key] = el.value;
+      }
+      return;
+    }
+    if (ds.mv && ui.mread) {
+      var mvVal = parseNum(el.value);
+      if (mvVal !== null && isNaN(mvVal)) { toast('Keine gültige Zahl.'); return; }
+      var mvs = M().vals[ui.mread] = M().vals[ui.mread] || {};
+      var o = mvs[ds.mv] || {};
+      if (mvVal === null) delete o[ds.k]; else o[ds.k] = mvVal;
+      if (Object.keys(o).length) mvs[ds.mv] = o; else delete mvs[ds.mv];
+      save(); rerenderKeepScroll(); toast('Gespeichert.'); return;
+    }
+    if (ds.dist) {
+      var dd = distById(ds.dist); if (!dd) return;
+      if (ds.k === 'gardens') { var pg = parseRanges(el.value); if (!pg.length) { toast('Bitte Gärten angeben.'); rerenderKeepScroll(); return; } dd.gardens = pg; }
+      else if (ds.k === 'name') { if (!el.value.trim()) return; dd.name = el.value.trim(); }
+      else dd[ds.k] = el.value;
+      save(); rerenderKeepScroll(); toast('Verteiler gespeichert.'); return;
+    }
     if (ds.ga) {
       var g = gaById(ds.ga); if (!g) return;
       if (ds.k === 'date') { if (!el.value) return; g.date = el.value; }
@@ -1223,6 +1739,12 @@ nav.hidden{display:none}
   });
 
   document.addEventListener('input', function (ev) {
+    var dr = ev.target.dataset && ev.target.dataset.dr;
+    if (dr && ui.rg && ev.target.type !== 'checkbox' && ev.target.type !== 'radio') {
+      ui.rg.draft[dr] = ev.target.value;
+      ['w', 's'].forEach(function (k) { var c = document.getElementById('cons-' + k); if (c) c.innerHTML = consText(k); });
+      return;
+    }
     var fld = ev.target.dataset && ev.target.dataset.field;
     if (!fld) return;
     ui[fld] = ev.target.value;
@@ -1234,6 +1756,9 @@ nav.hidden{display:none}
     if (ev.key !== 'Enter') return;
     if (ev.target.id === 'w-garden') { var w = document.querySelector('[data-act="welcome"]'); if (w) w.click(); }
     if (ev.target.id === 'a-pin') { var a = document.querySelector('[data-act="admin-login"]'); if (a) a.click(); }
+    if (ev.target.id === 'rg-jump') { var j = document.querySelector('[data-act="rg-jump"]'); if (j) j.click(); }
+    if (ev.target.dataset && ev.target.dataset.dr === 'w') { var sIn = document.querySelector('[data-dr="s"]'); if (sIn) { ev.preventDefault(); sIn.focus(); } }
+    else if (ev.target.dataset && ev.target.dataset.dr === 's') { ev.preventDefault(); ev.target.blur(); var sv = document.querySelector('[data-act="rg-save"]'); if (sv) sv.click(); }
   });
 
   var lastState = lightState();

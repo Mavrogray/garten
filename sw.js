@@ -1,6 +1,6 @@
 // Bei jedem Update hochzählen, gleich wie APP_VERSION in index.html,
 // sonst bleibt die alte Version im Cache.
-const VERSION = "jaegerteich-0.3.0";
+const VERSION = "jaegerteich-0.4.0";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {

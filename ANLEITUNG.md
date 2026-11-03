@@ -60,6 +60,15 @@ Auf dem iPhone: in Safari öffnen → Teilen → **Zum Home-Bildschirm**.
 | Vermerk | pro Garten und Jahr: krank, Garten frei, befreit, Sonstiges + Text; frei/befreit fällt aus Planung und Abrechnung |
 | Kassenwart | Mail mit Liste der offenen Gärten (öffnet das Mailprogramm), Liste zusätzlich als CSV für Excel |
 
+| Zählerstände | Admin → Zählerstände: Ablesung anlegen (2× im Jahr), Rundgang Garten für Garten, Verbrauch zur vorherigen Ablesung |
+| Zählertausch | Haken „Zähler getauscht“: Endstand alt + Startstand neu, Verbrauch wird über beide gerechnet |
+| Plausibilität | Minusverbrauch nur mit Grund (Strom: Solar / Solar mit Speicher / anderer Grund); ungewöhnlich hoher Verbrauch muss als „geprüft“ bestätigt werden |
+| Haupt- & Verteilerzähler | Verteiler mit angeschlossenen Gärten anlegen; Vergleich Zähler gegen Summe der Gärten, Warnung ab 5 % (Hauptzähler ab 10 %) |
+| Kassenwart | Zählerliste per Mail und als CSV (Stand, Verbrauch, Hinweise, Vergleich) |
+
+Zum Ausprobieren: unter Zählerstände „Beispieldaten erzeugen“, dann eine neue Ablesung anlegen und den Rundgang starten.
+Im Rundgang springt „Weiter/Enter“ auf der Tastatur von Wasser zu Strom und dann zum Speichern.
+
 Ein Tipp auf die Überschrift oben führt immer zurück zur Startseite.
 
 Einträge verschwinden nach 4 Wochen von selbst. Unten auf der Startseite lassen sich die Testdaten zurücksetzen.
