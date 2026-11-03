@@ -156,6 +156,13 @@ nav.hidden{display:none}
 (function () {
   'use strict';
 
+  // Bei jedem Update hochzählen, zusammen mit VERSION in sw.js
+  var APP_VERSION = '0.1.0';
+  var COPYRIGHT = '© ' + new Date().getFullYear() + ' KGV Jägerteich';
+  function footer() {
+    return '<div class="small center">Testversion ' + APP_VERSION + ' · ' + COPYRIGHT + '</div>';
+  }
+
   var KEY = 'jaegerteich-test-v1';
   var DAY = 86400000;
   var EXPIRE_DAYS = 28;
@@ -282,6 +289,7 @@ nav.hidden{display:none}
         '<button class="btn primary" data-act="welcome">Los geht\'s</button>' +
       '</div>' +
       '<div class="small center">Alle Daten bleiben in dieser Testversion nur auf diesem Gerät.</div>' +
+      footer() +
     '</section>';
   }
 
@@ -320,6 +328,7 @@ nav.hidden{display:none}
         '<div class="body">Angemeldet als <b>Garten ' + esc(S.garden) + '</b>. Einträge, Licht und Protokoll werden nur auf diesem Gerät gespeichert, andere sehen sie nicht.</div>' +
         '<div class="row"><button class="btn ghost" data-act="change-garden">Garten ändern</button><button class="btn ghost" data-act="reset">Zurücksetzen</button></div>' +
       '</div>' +
+      footer() +
     '</section>';
   }
 

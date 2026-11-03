@@ -53,8 +53,15 @@ Einträge verschwinden nach 4 Wochen von selbst. Unten auf der Startseite lassen
 
 ## 4. Update der App
 
-1. Neue Dateien ins Repo hochladen (alte überschreiben).
-2. In `sw.js` die Zeile `const VERSION = "jaegerteich-v1";` hochzählen (v2, v3 …), sonst bleibt die alte Version im Cache.
-3. App mit Internet zweimal neu öffnen.
+1. Versionsnummer an **zwei Stellen gleich** hochzählen, z. B. auf 0.2.0:
+   - `index.html`: `var APP_VERSION = '0.1.0';`
+   - `sw.js`: `const VERSION = "jaegerteich-0.1.0";`
+   Ohne die Änderung in `sw.js` bleibt die alte Version im Cache.
+2. Neue Dateien ins Repo hochladen (alte überschreiben).
+3. App mit Internet zweimal neu öffnen. Unten auf der Startseite steht dann die neue Nummer.
+
+Schema: kleine Korrekturen 0.1.**1**, neue Funktionen 0.**2**.0, die echte Version mit Server wird 1.0.0.
+
+Versionsnummer und Copyright (© Jahr KGV Jägerteich) stehen unten auf der Startseite und auf dem Willkommensbildschirm.
 
 Die Testdaten auf den Handys bleiben bei einem Update erhalten.
